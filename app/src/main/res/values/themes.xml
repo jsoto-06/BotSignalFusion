@@ -1,0 +1,12 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.Theme.BitgetBot" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primary_accent</item>
+        <item name="colorPrimaryVariant">@color/background_card</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="android:windowBackground">@color/background_main</item>
+        <item name="android:statusBarColor">@color/background_main</item>
+        <item name="android:navigationBarColor">@color/background_card</item>
+    </style>
+
+    <style name="Theme.BitgetBot" parent="Base.Theme.BitgetBot" />
+</resources>

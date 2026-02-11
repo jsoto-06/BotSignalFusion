@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="20dp"
+    android:background="#202020">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Configuración API Bitget"
+        android:textColor="#FFFFFF"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="15dp"/>
+
+    <EditText
+        android:id="@+id/etApiKey"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Pegar API Key aquí"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#808080"
+        android:backgroundTint="#FFFFFF"
+        android:inputType="textNoSuggestions"/>
+
+    <EditText
+        android:id="@+id/etSecretKey"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Pegar Secret Key aquí"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#808080"
+        android:backgroundTint="#FFFFFF"
+        android:layout_marginTop="10dp"
+        android:inputType="textPassword"/>
+
+    <EditText
+        android:id="@+id/etPassphrase"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Escribir Passphrase"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#808080"
+        android:backgroundTint="#FFFFFF"
+        android:layout_marginTop="10dp"
+        android:inputType="textPassword"/>
+
+    <Button
+        android:id="@+id/btnSave"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="GUARDAR CLAVES"
+        android:backgroundTint="#0ECB81"
+        android:textColor="#FFFFFF"
+        android:layout_marginTop="20dp"/>
+
+</LinearLayout>
