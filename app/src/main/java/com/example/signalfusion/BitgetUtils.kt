@@ -1,4 +1,4 @@
-package com.example.bitgetbot
+package com.example.signalfusion
 
 import android.util.Base64
 import javax.crypto.Mac
