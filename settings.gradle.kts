@@ -20,6 +20,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BitgetBot"
+rootProject.name = "SignalFusion"
 include(":app")
  

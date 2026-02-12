@@ -67,8 +67,58 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <TextView
-            android:text="GESTIÓN DE RIESGO"
+            android:text="ESTRATEGIA MAESTRA"
             android:textColor="@color/neon_gold"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/bg_card"
+            app:cardCornerRadius="12dp"
+            app:strokeWidth="0dp"
+            android:layout_marginBottom="24dp">
+
+            <RadioGroup
+                android:id="@+id/rgStrategy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp">
+
+                <RadioButton
+                    android:id="@+id/rbModerada"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🟢 MODERADA (Balanceada)"
+                    android:textColor="@color/text_primary"
+                    android:buttonTint="@color/neon_green"
+                    android:checked="true"/>
+
+                <RadioButton
+                    android:id="@+id/rbAgresiva"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🔴 AGRESIVA (Alta Frecuencia)"
+                    android:textColor="@color/text_primary"
+                    android:buttonTint="@color/neon_red"/>
+
+                <RadioButton
+                    android:id="@+id/rbBreakout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="🔵 BREAKOUT (Francotirador)"
+                    android:textColor="@color/text_primary"
+                    android:buttonTint="@color/neon_blue"/>
+            </RadioGroup>
+        </com.google.android.material.card.MaterialCardView>
+
+        <TextView
+            android:text="GESTIÓN DE RIESGO"
+            android:textColor="@color/text_secondary"
             android:textSize="12sp"
             android:textStyle="bold"
             android:layout_marginBottom="12dp"
@@ -102,7 +152,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:hint="Take Profit %"
+                android:hint="TP %"
                 app:boxBackgroundColor="@color/bg_input"
                 app:boxStrokeWidth="0dp">
                 <com.google.android.material.textfield.TextInputEditText
@@ -118,7 +168,7 @@
         <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Stop Loss %"
+            android:hint="SL %"
             app:boxBackgroundColor="@color/bg_input"
             app:boxStrokeWidth="0dp"
             android:layout_marginBottom="24dp">
@@ -188,12 +238,13 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
                     <TextView
-                        android:text="Operativa de alto riesgo"
+                        android:text="Entradas más rápidas (Más riesgo)"
                         android:textColor="@color/text_secondary"
                         android:textSize="11sp"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"/>
                 </LinearLayout>
+
                 <Switch
                     android:id="@+id/switchTurbo"
                     android:layout_width="wrap_content"

@@ -1,4 +1,4 @@
-package com.example.bitgetbot
+package com.example.signalfusion
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity

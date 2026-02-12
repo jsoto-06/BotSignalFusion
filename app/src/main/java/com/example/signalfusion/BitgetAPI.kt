@@ -1,4 +1,4 @@
-package com.example.bitgetbot
+package com.example.signalfusion
 
 import retrofit2.Call
 import retrofit2.Retrofit

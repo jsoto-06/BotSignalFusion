@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.example.bitgetbot"
+    namespace = "com.example.signalfusion"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.example.bitgetbot"
+        applicationId = "com.example.signalfusion"
         minSdk = 24
         targetSdk = 34
         versionCode = 1

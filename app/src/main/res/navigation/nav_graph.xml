@@ -4,14 +4,14 @@
     android:id="@+id/nav_graph"
     app:startDestination="@id/botFragment"> <fragment
     android:id="@+id/botFragment"
-    android:name="com.example.bitgetbot.BotFragment"
+    android:name="com.example.signalfusion.BotFragment"
     android:label="Bot Dashboard" />
     <fragment
         android:id="@+id/historyFragment"
-        android:name="com.example.bitgetbot.HistoryFragment"
+        android:name="com.example.signalfusion.HistoryFragment"
         android:label="Historial" />
     <fragment
         android:id="@+id/settingsFragment"
-        android:name="com.example.bitgetbot.SettingsFragment"
+        android:name="com.example.signalfusion.SettingsFragment"
         android:label="Ajustes" />
 </navigation>
