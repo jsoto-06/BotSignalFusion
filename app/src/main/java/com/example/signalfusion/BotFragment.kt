@@ -26,6 +26,9 @@ class BotFragment : Fragment() {
     private lateinit var switchBotActive: MaterialSwitch
     private lateinit var chipStatus: Chip
 
+    // 🆕 NUEVO: Variable para la salud del bot
+    private lateinit var tvSaludBot: TextView
+
     private val tradingReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == "ACTUALIZACION_TRADING") {
@@ -45,10 +48,19 @@ class BotFragment : Fragment() {
                     tvLivePrice.text = "$${TradingService.lastPrice}"
                 }
 
-                // ACTUALIZACIÓN EN TIEMPO REAL DEL SALDO (Si el bot gana/pierde)
+                // ACTUALIZACIÓN EN TIEMPO REAL DEL SALDO
                 if (TradingService.isRunning) {
                     tvTotalBalance.text = "$%.2f".format(TradingService.currentBalance)
                 }
+
+                // 🆕 NUEVO: Recibir métricas y actualizar Salud
+                val trades = intent.getIntExtra("TOTAL_TRADES", 0)
+                val wins = intent.getIntExtra("WINS", 0)
+                // Usamos valores por defecto seguros para evitar crashes
+                val balance = intent.getDoubleExtra("BALANCE", TradingService.currentBalance)
+                val initial = intent.getDoubleExtra("INITIAL_BALANCE", TradingService.currentBalance) // Si es 0, usa el actual
+
+                actualizarSalud(trades, wins, balance, initial)
             }
         }
     }
@@ -70,6 +82,13 @@ class BotFragment : Fragment() {
         switchBotActive = view.findViewById(R.id.switchBotActive)
         chipStatus = view.findViewById(R.id.chipStatus)
 
+        // 🆕 Vincular la vista (Asegúrate que añadiste el ID en el XML antes)
+        tvSaludBot = view.findViewById(R.id.tvSaludBot)
+
+        // Estado inicial del Switch
+        switchBotActive.isChecked = TradingService.isRunning
+        actualizarUIEstado(TradingService.isRunning)
+
         switchBotActive.setOnCheckedChangeListener { _, isChecked ->
             val context = requireContext()
             val intent = Intent(context, TradingService::class.java)
@@ -83,19 +102,42 @@ class BotFragment : Fragment() {
         }
     }
 
+    // 🆕 NUEVO: Lógica del Semáforo de Salud
+    private fun actualizarSalud(totalTrades: Int, wins: Int, currentBalance: Double, initialBalance: Double) {
+        if (totalTrades == 0) {
+            tvSaludBot.text = "🔵 CALIBRANDO..."
+            tvSaludBot.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_grey))
+            return
+        }
+
+        // Evitar división por cero
+        val baseBalance = if (initialBalance > 0) initialBalance else 1000.0
+
+        // Cálculos Matemáticos
+        val winRate = (wins.toDouble() / totalTrades.toDouble()) * 100
+        val roi = ((currentBalance - baseBalance) / baseBalance) * 100
+
+        // Lógica de Colores (Semáforo)
+        val (emoji, texto, colorId) = when {
+            roi > 0.5 && winRate >= 50 -> Triple("🟢", "EXCELENTE", R.color.neon_green)
+            roi > 0.0 -> Triple("🟡", "POSITIVO", R.color.neon_gold)
+            roi > -2.0 -> Triple("🟠", "REGULAR", R.color.neon_gold) // Usamos Gold si no tienes Orange definido
+            else -> Triple("🔴", "CRÍTICO", R.color.neon_red)
+        }
+
+        tvSaludBot.text = "$emoji $texto (WR: %.0f%% | ROI: %+.1f%%)".format(winRate, roi)
+        tvSaludBot.setTextColor(ContextCompat.getColor(requireContext(), colorId))
+    }
+
     override fun onResume() {
         super.onResume()
 
-        // --- AQUÍ ESTÁ EL ARREGLO PARA QUE MUESTRE 1000 ---
-
-        // 1. Leemos la configuración guardada SIEMPRE
+        // 1. Leemos la configuración guardada
         val prefs = requireContext().getSharedPreferences("BotConfig", Context.MODE_PRIVATE)
         val saldoConfigurado = prefs.getString("AMOUNT", "500")?.toDoubleOrNull() ?: 500.0
 
         if (TradingService.isRunning) {
             actualizarUIEstado(true)
-
-            // Si el bot corre, usamos el saldo dinámico del servicio
             tvTotalBalance.text = "$%.2f".format(TradingService.currentBalance)
 
             // Datos de memoria
@@ -109,9 +151,11 @@ class BotFragment : Fragment() {
             }
             colorearDatos(TradingService.lastRSI, TradingService.lastTrend)
 
+            // 🆕 Actualizar salud al volver (usando datos estáticos temporales)
+            actualizarSalud(TradingService.totalTrades, TradingService.tradesGanados, TradingService.currentBalance, saldoConfigurado)
+
         } else {
             actualizarUIEstado(false)
-            // Si el bot está apagado, mostramos lo que guardaste en Ajustes (1000)
             tvTotalBalance.text = "$%.2f".format(saldoConfigurado)
         }
 
@@ -159,12 +203,16 @@ class BotFragment : Fragment() {
             txtEstadoSimple.setTextColor(ContextCompat.getColor(requireContext(), R.color.neon_green))
         } else {
             chipStatus.text = "● OFFLINE"
-            chipStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
+            chipStatus.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_grey)) // Cambiado a text_grey si text_secondary falla
             txtEstadoSimple.text = "Detenido"
-            txtEstadoSimple.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_secondary))
+            txtEstadoSimple.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_grey))
             txtRSI.text = "--"
             txtVolatilidad.text = "--"
             txtTendencia.text = "--"
+
+            // 🆕 Resetear salud
+            tvSaludBot.text = "⚪ OFFLINE"
+            tvSaludBot.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_grey))
         }
     }
 }

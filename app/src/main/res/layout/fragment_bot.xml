@@ -36,6 +36,17 @@
         app:chipBackgroundColor="@color/cyber_card_bg"
         app:chipStrokeColor="@color/neon_green"
         app:chipStrokeWidth="1dp" />
+    <TextView
+        android:id="@+id/tvSaludBot"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/chipStatus"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="4dp"
+        android:text="⚪ Calibrando..."
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_grey"/>
 
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardSwitch"
@@ -112,14 +123,15 @@
                 android:text="CAPITAL TOTAL (USDT)"
                 android:textColor="@color/text_grey"
                 android:textSize="11sp" />
+
             <TextView
                 android:id="@+id/tvTotalBalance"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-light"
                 android:text="$1,000.00"
-                android:textColor="@color/white"
-                android:textSize="42sp"
-                android:fontFamily="sans-serif-light" />
+                android:textColor="@color/neon_green"
+                android:textSize="42sp" />
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
