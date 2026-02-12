@@ -35,4 +35,4 @@
 El trading de criptomonedas conlleva un riesgo significativo. Este bot se proporciona "tal cual" para fines educativos y de simulación. El autor no se hace responsable de las pérdidas financieras derivadas del uso de este software en mercados reales. **Invierte solo lo que estés dispuesto a perder.**
 
 ---
-Creado con ❤️ para la comunidad de trading.
+Creado con ❤️ para la comunidad de trading. by IG: @jonathansoto06
