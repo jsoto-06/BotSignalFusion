@@ -1,95 +1,71 @@
-# ⚡ SignalFusion Pro v3.2 - High Frequency Trading Bot (Android)
+# <p align="center">⚡ SignalFusion Pro v3.4</p>
 
-![Platform](https://img.shields.io/badge/PLATFORM-ANDROID-green) ![Language](https://img.shields.io/badge/KOTLIN-100%25-purple) ![Status](https://img.shields.io/badge/STATUS-OPERATIONAL-brightgreen) ![License](https://img.shields.io/badge/LICENSE-MIT-blue)
+<p align="center">
+  <img src="https://img.shields.io/badge/Version-3.4_Stable-00FFA3?style=for-the-badge&logo=android" />
+  <img src="https://img.shields.io/badge/Language-Kotlin_1.9-7F52FF?style=for-the-badge&logo=kotlin" />
+  <img src="https://img.shields.io/badge/Optimization-S24_Ultra_%2F_S21-FFD700?style=for-the-badge&logo=samsung" />
+</p>
 
-**SignalFusion Pro** es una terminal de trading algorítmico autónoma diseñada para operar en el mercado de futuros de criptomonedas (Bitget API). A diferencia de los bots en la nube, esta aplicación se ejecuta localmente en dispositivos Android utilizando servicios en primer plano para garantizar una latencia mínima y control total sobre los datos.
+<p align="center">
+  <b>Terminal de trading algorítmico de alto rendimiento para Android.</b><br>
+  <i>Diseñada para la ejecución profesional en el mercado de futuros (Bitget API).</i>
+</p>
 
 ---
 
-## 🔥 Características Principales (Core Features)
+## 🆕 Novedades de la Versión 3.4 
 
-### 1. 🧠 Motor de Persistencia de Datos (Nuevo en v3.2)
-El sistema cuenta con una capa de memoria persistente (`SharedPreferences`) que actúa como una "caja negra" del avión.
-- **Tolerancia a Fallos:** Si la app se cierra, el teléfono se reinicia o el proceso muere, el bot **restaura** automáticamente el estado de la operación (Precio de entrada, Stop Loss, PnL Máximo).
-- **Continuidad:** El balance y las estadísticas de Win Rate se preservan entre sesiones.
+### 📊 Inteligencia Visual y Gráficos
+* **Curva de Crecimiento en Vivo:** Integración de `MPAndroidChart` para visualizar el balance en tiempo real. Observa tu progreso trade a trade con una línea de tendencia dinámica.
+* **Historial Profesional:** Pestaña de historial rediseñada con tarjetas visuales. Identifica instantáneamente ganancias (**neón verde**) y pérdidas (**neón rojo**) con detalles de PnL y timestamp.
 
-### 2. 🌍 Escáner Multi-Activo Inteligente
-El bot no se limita a Bitcoin. Utiliza un sistema de **Rotación Secuencial** para monitorear múltiples pares:
-- **Activos Soportados:** BTC/USDT, ETH/USDT, SOL/USDT, XRP/USDT.
-- **Lógica de Bloqueo:** Escanea el mercado cada 2 segundos. Cuando detecta una oportunidad y abre una operación, el escáner se **bloquea** en ese activo para gestionar la salida con precisión de milisegundos, ignorando el resto del mercado hasta cerrar el trade.
+### 🛡️ Gestión de Riesgo de Precisión (User-Controlled)
+* **Riesgo por Operación (%):** Ahora el usuario tiene el control total. Configura qué porcentaje del capital total (2%, 5%, 10%, etc.) se arriesga en cada entrada.
+* **Botón de Pánico (Manual Close):** Control absoluto sobre el motor. Cierre instantáneo de cualquier posición abierta desde el Dashboard con un solo toque.
+* **Escudo Anti-Rachas:** Protección inteligente que pausa el bot automáticamente durante 1 hora tras detectar 5 pérdidas consecutivas.
 
-### 3. 🛡️ Sistema de Protección "Circuit Breaker"
-Inspirado en Wall Street, el bot incluye un mecanismo de seguridad pasiva:
-- **Límite de Pérdida Diaria:** Si el capital total cae un **5%** (configurable) respecto al inicio de la sesión, el motor se **autodestruye** (detiene todos los servicios) para prevenir la liquidación de la cuenta.
-- **Notificación de Emergencia:** Envía una alerta crítica al usuario informando del bloqueo.
+---
 
-### 4. 📊 Dashboard de Salud en Tiempo Real
-Visualización instantánea del rendimiento del algoritmo:
-- **Semáforo de Salud:** Indicadores visuales (🟢 🟡 🔴) basados en el rendimiento actual.
-- **Métricas Vivas:** Cálculo en tiempo real del **ROI** (Retorno de Inversión) y **Win Rate** (Tasa de Acierto).
+## 🔥 Características Principales
 
-### 5. 📲 Notificaciones Push
-Sistema de alertas mediante canales de notificación de Android:
-- **Canal Silencioso:** Mantiene el servicio vivo en la barra de estado.
-- **Canal de Alertas:** Vibración y sonido al abrir/cerrar operaciones (`OPEN LONG`, `TAKE PROFIT`, `STOP LOSS`).
+### 1. 🧠 Motor de Persistencia "Black Box"
+Capa de memoria persistente que actúa como una caja negra. Si la app se cierra o el sistema reinicia el proceso, el bot **restaura automáticamente** el estado de la operación, el precio de entrada y el PnL máximo alcanzado.
+
+### 2. 🌍 Escáner Multi-Activo Dinámico
+Monitorización secuencial de pares críticos: **BTC, ETH, SOL y XRP**.
+* **Lógica de Enfoque:** El escáner rota cada 2-4 segundos. Al abrir una posición, el motor se bloquea en ese activo para una gestión de salida de ultra-latencia.
+
+### 3. 🛡️ Circuit Breaker (Seguridad Militar)
+Si el capital total cae por debajo del límite diario configurado (ej. -10%), el bot ejecuta un **apagado de emergencia** de todos los servicios para proteger el balance principal.
+
+### 4. ⚡ Tarjeta de Posición Activa
+Dashboard dinámico durante operaciones activas:
+- ⏱️ **Cronómetro** de duración del trade.
+- 🟢 **PnL en tiempo real** con cambio de color dinámico.
+- ↗️ **Tipo de entrada** (Long / Short).
 
 ---
 
 ## 📈 Estrategias Algorítmicas
 
-El bot implementa tres lógicas de trading distintas, seleccionables por el usuario:
-
-| Estrategia | Perfil de Riesgo | Indicadores Técnicos | Descripción |
-| :--- | :---: | :--- | :--- |
-| **MODERADA** | Bajo | EMA9, EMA21, RSI, Volatilidad | Busca cruces de medias móviles a favor de la tendencia. Solo opera si el RSI confirma la dirección. |
-| **AGRESIVA** | Alto | RSI (Extremo), Scalping | **(Activa)** Busca reversiones rápidas en zonas de sobrecompra (>70) o sobreventa (<30). Usa Trailing Stop ajustado. |
-| **BREAKOUT** | Medio | Volumen, Bandas de Precio | Detecta explosiones de volatilidad y entra en la dirección de la ruptura con confirmación de volumen. |
+| Estrategia | Perfil | Indicadores | Descripción |
+| :--- | :--- | :--- | :--- |
+| **AGRESIVA** | 🔴 Alto | RSI Extremo + Turbo | Scalping puro en 1m. Entradas rápidas en zonas de sobre-extensión. |
+| **MODERADA** | 🟡 Medio | EMA 9/21 + RSI + ATR | Seguimiento de tendencia con confirmación de volatilidad. |
+| **BREAKOUT** | 🔵 Medio | Volumen + EMA | Detección de rupturas de rango y explosiones de volumen. |
 
 ---
 
-## 🛠️ Arquitectura Técnica
+## 🛠️ Stack Tecnológico
 
-El proyecto sigue una arquitectura **MVVM simplificada** para Android:
-
-* **Language:** Kotlin.
-* **Concurrency:** Coroutines (Dispatchers.IO para red, Main para UI).
-* **Networking:** OkHttp 4 (Conexiones REST API a Bitget).
-* **JSON Parsing:** `org.json` nativo para máxima velocidad.
-* **Background Processing:** Android Foreground Service con `START_STICKY` para resistencia al sistema operativo.
-
-### Estructura de Archivos Clave
-- `TradingService.kt`: El cerebro. Maneja el bucle infinito, lógica de trading y conexión API.
-- `BotFragment.kt`: La interfaz de usuario. Recibe `Broadcasts` del servicio para actualizar gráficos y textos.
-- `Indicadores.kt`: Librería matemática propia para cálculo de RSI, EMA y ATR sin dependencias externas.
-
----
-
-## 🚀 Instalación y Configuración
-
-1.  **Requisitos:**
-    - Android Studio Hedgehog o superior.
-    - Dispositivo con Android 8.0 (Oreo) o superior.
-    - Conexión a Internet estable.
-
-2.  **Configuración de API:**
-    - Generar API Keys en Bitget (Permisos: *Futures Trading*).
-    - Ingresar Keys en la pestaña **Ajustes** de la app.
-
-3.  **Primer Uso:**
-    - Seleccionar monedas a operar (Checkboxes).
-    - Elegir Estrategia (Recomendada: *Agresiva* para pruebas).
-    - Activar el interruptor **"Motor Automático"**.
-
----
-
-## ⚠️ Disclaimer & Seguridad
-
-Este software es un proyecto de desarrollo personal y educativo.
-- **Las llaves API** se guardan localmente en el dispositivo (`SharedPreferences` en modo privado).
-- El autor no se hace responsable de pérdidas financieras derivadas del uso de este software en cuentas reales.
-- Se recomienda encarecidamente usar el modo **Paper Trading** (Simulación) antes de arriesgar capital real.
-
----
+```kotlin
+// High-Performance Components
+- Language: Kotlin 1.9
+- Architecture: Android Foreground Service (START_STICKY)
+- Optimization: Android 14 API Level 34 (S24/S21 Friendly)
+- Charts: MPAndroidChart (Real-time Rendering)
+- Networking: OkHttp 4 (REST API Bitget V2)
+- Concurrency: Kotlin Coroutines (Dispatchers.IO)
 
 > **Desarrollado con 💻 y ☕ por by IG: @jonathansoto06**
 ---
