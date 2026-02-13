@@ -37,36 +37,32 @@ android {
 }
 
 dependencies {
-    dependencies {
-        // Librerías base de Android (Versiones estables para SDK 34)
-        implementation("androidx.core:core-ktx:1.12.0")
-        implementation("androidx.appcompat:appcompat:1.6.1")
-        implementation("com.google.android.material:material:1.11.0")
-        implementation("androidx.constraintlayout:constraintlayout:2.1.4")
+    // Librerías base de Android
+    implementation("androidx.core:core-ktx:1.12.0")
+    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation("com.google.android.material:material:1.11.0")
+    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
 
-        // Navegación y Actividad
-        implementation("androidx.activity:activity-ktx:1.8.2")
+    // Navegación y Actividad
+    implementation("androidx.activity:activity-ktx:1.8.2")
 
-        // Conexión a Internet (Retrofit)
-        implementation("com.squareup.retrofit2:retrofit:2.9.0")
-        implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    // Conexión a Internet (Retrofit & OkHttp)
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
-        // Gráficos (MPAndroidChart)
-        implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    // Corrutinas
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 
-        // Testing (Déjalo por si acaso)
-        testImplementation("junit:junit:4.13.2")
-        androidTestImplementation("androidx.test.ext:junit:1.1.5")
-        androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-        implementation("com.squareup.okhttp3:okhttp:4.12.0")
-        implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    // 📊 Gráficos (MPAndroidChart) - FASE 3
+    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
 
+    // Navegación moderna (Jetpack Navigation)
+    implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
+    implementation("androidx.navigation:navigation-ui-ktx:2.7.7")
 
-        // Navegación moderna (Jetpack Navigation)
-        implementation("androidx.navigation:navigation-fragment-ktx:2.7.7")
-        implementation("androidx.navigation:navigation-ui-ktx:2.7.7")
-        // Componentes visuales Material Design (para el menú inferior)
-        implementation("com.google.android.material:material:1.11.0")
-    }
-
+    // Testing
+    testImplementation("junit:junit:4.13.2")
+    androidTestImplementation("androidx.test.ext:junit:1.1.5")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
 }
