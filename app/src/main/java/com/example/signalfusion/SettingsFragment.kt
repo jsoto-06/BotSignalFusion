@@ -15,8 +15,10 @@ class SettingsFragment : Fragment() {
     // Vistas Anteriores
     private lateinit var etApiKey: TextInputEditText
     private lateinit var etApiSecret: TextInputEditText
+    private lateinit var etApiPassphrase: TextInputEditText // 🔥 NUEVO: Passphrase
+
     private lateinit var etAmount: TextInputEditText
-    private lateinit var etRisk: TextInputEditText // 🆕 NUEVO: Riesgo
+    private lateinit var etRisk: TextInputEditText
     private lateinit var etTp: TextInputEditText
     private lateinit var etSl: TextInputEditText
     private lateinit var sbLeverage: SeekBar
@@ -45,6 +47,7 @@ class SettingsFragment : Fragment() {
     private val timeframes = arrayOf("1m", "5m", "15m", "30m", "1H")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        // Asegúrate de usar el layout correcto (fragment_settings)
         return inflater.inflate(R.layout.fragment_settings, container, false)
     }
 
@@ -54,8 +57,16 @@ class SettingsFragment : Fragment() {
         // 1. Vincular Vistas
         etApiKey = view.findViewById(R.id.etApiKey)
         etApiSecret = view.findViewById(R.id.etApiSecret)
+
+        // Intentamos vincular la Passphrase. Si el ID no existe en el XML viejo, no crashea.
+        try {
+            etApiPassphrase = view.findViewById(R.id.etApiPassphrase)
+        } catch (e: Exception) {
+            // Si usas un XML antiguo que no tiene este campo, esto evita el crash
+        }
+
         etAmount = view.findViewById(R.id.etAmount)
-        etRisk = view.findViewById(R.id.etRisk) // 🆕 VINCULADO
+        etRisk = view.findViewById(R.id.etRisk)
         etTp = view.findViewById(R.id.etTp)
         etSl = view.findViewById(R.id.etSl)
         sbLeverage = view.findViewById(R.id.sbLeverage)
@@ -87,40 +98,22 @@ class SettingsFragment : Fragment() {
         val prefs = requireContext().getSharedPreferences("BotConfig", Context.MODE_PRIVATE)
         etApiKey.setText(prefs.getString("API_KEY", ""))
         etApiSecret.setText(prefs.getString("SECRET_KEY", ""))
+
+        // Cargar Passphrase si existe la vista
+        if (::etApiPassphrase.isInitialized) {
+            etApiPassphrase.setText(prefs.getString("API_PASSPHRASE", ""))
+        }
+
         etAmount.setText(prefs.getString("AMOUNT", "1000"))
-
-        // 🆕 CARGAR RIESGO (Por defecto 5.0%)
         etRisk.setText(prefs.getString("RISK_PERCENT", "5.0"))
-
         etTp.setText(prefs.getString("TP_VAL", "2.0"))
         etSl.setText(prefs.getString("SL_VAL", "1.5"))
 
-        val lev = prefs.getInt("LEVERAGE", 10)
+        val lev = prefs.getInt("LEVERAGE", 5)
         sbLeverage.progress = lev
         tvLeverageLabel.text = "Apalancamiento: ${lev}x"
-        switchTurbo.isChecked = prefs.getBoolean("TURBO_MODE", true)
 
-        val estrategia = prefs.getString("STRATEGY", "AGRESIVA")
-        when (estrategia) {
-            "MODERADA" -> rbModerada.isChecked = true
-            "BREAKOUT" -> rbBreakout.isChecked = true
-            else -> rbAgresiva.isChecked = true
-        }
-
-        cbBTC.isChecked = prefs.getBoolean("COIN_BTC", true)
-        cbETH.isChecked = prefs.getBoolean("COIN_ETH", false)
-        cbSOL.isChecked = prefs.getBoolean("COIN_SOL", true)
-        cbXRP.isChecked = prefs.getBoolean("COIN_XRP", true)
-
-        // Cargar Datos Avanzados
-        val savedTf = prefs.getString("TIMEFRAME", "1m")
-        spinnerTimeframe.setSelection(timeframes.indexOf(savedTf).takeIf { it >= 0 } ?: 0)
-
-        etTrailingStop.setText(prefs.getFloat("TS_ACTIV", 1.3f).toString())
-        etCircuitBreaker.setText(prefs.getFloat("MAX_DAILY_LOSS", 10.0f).toString())
-        switchPauseOnLoss.isChecked = prefs.getBoolean("PAUSE_ON_LOSS", true)
-
-        // Listener Slider
+        // Actualizamos el slider visualmente
         sbLeverage.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val valor = if (progress < 1) 1 else progress
@@ -130,18 +123,43 @@ class SettingsFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
+        switchTurbo.isChecked = prefs.getBoolean("TURBO_MODE", false)
+
+        val estrategia = prefs.getString("STRATEGY", "MODERADA")
+        when (estrategia) {
+            "MODERADA" -> rbModerada.isChecked = true
+            "BREAKOUT" -> rbBreakout.isChecked = true
+            "AGRESIVA" -> rbAgresiva.isChecked = true
+        }
+
+        cbBTC.isChecked = prefs.getBoolean("COIN_BTC", true)
+        cbETH.isChecked = prefs.getBoolean("COIN_ETH", false)
+        cbSOL.isChecked = prefs.getBoolean("COIN_SOL", false)
+        cbXRP.isChecked = prefs.getBoolean("COIN_XRP", false)
+
+        val savedTf = prefs.getString("TIMEFRAME", "1m")
+        val spinnerPosition = adapter.getPosition(savedTf)
+        if (spinnerPosition >= 0) spinnerTimeframe.setSelection(spinnerPosition)
+
+        etTrailingStop.setText(prefs.getFloat("TS_ACTIV", 1.3f).toString())
+        etCircuitBreaker.setText(prefs.getFloat("MAX_DAILY_LOSS", 10.0f).toString())
+        switchPauseOnLoss.isChecked = prefs.getBoolean("PAUSE_ON_LOSS", true)
+
         // 3. Botón Guardar
         btnSave.setOnClickListener {
             val editor = prefs.edit()
 
             // Datos Básicos
-            editor.putString("API_KEY", etApiKey.text.toString())
-            editor.putString("SECRET_KEY", etApiSecret.text.toString())
+            editor.putString("API_KEY", etApiKey.text.toString().trim())
+            editor.putString("SECRET_KEY", etApiSecret.text.toString().trim())
+
+            // Guardar Passphrase
+            if (::etApiPassphrase.isInitialized) {
+                editor.putString("API_PASSPHRASE", etApiPassphrase.text.toString().trim())
+            }
+
             editor.putString("AMOUNT", etAmount.text.toString())
-
-            // 🆕 GUARDAR RIESGO
             editor.putString("RISK_PERCENT", etRisk.text.toString())
-
             editor.putString("TP_VAL", etTp.text.toString())
             editor.putString("SL_VAL", etSl.text.toString())
 
@@ -152,7 +170,8 @@ class SettingsFragment : Fragment() {
             val selectedStrategy = when (rgStrategy.checkedRadioButtonId) {
                 R.id.rbModerada -> "MODERADA"
                 R.id.rbBreakout -> "BREAKOUT"
-                else -> "AGRESIVA"
+                R.id.rbAgresiva -> "AGRESIVA"
+                else -> "MODERADA"
             }
             editor.putString("STRATEGY", selectedStrategy)
 
@@ -161,10 +180,14 @@ class SettingsFragment : Fragment() {
             editor.putBoolean("COIN_SOL", cbSOL.isChecked)
             editor.putBoolean("COIN_XRP", cbXRP.isChecked)
 
-            // Guardar Datos Avanzados
             editor.putString("TIMEFRAME", spinnerTimeframe.selectedItem.toString())
-            editor.putFloat("TS_ACTIV", etTrailingStop.text.toString().toFloatOrNull() ?: 1.3f)
-            editor.putFloat("MAX_DAILY_LOSS", etCircuitBreaker.text.toString().toFloatOrNull() ?: 10.0f)
+
+            val tsVal = etTrailingStop.text.toString().toFloatOrNull() ?: 1.3f
+            editor.putFloat("TS_ACTIV", tsVal)
+
+            val cbVal = etCircuitBreaker.text.toString().toFloatOrNull() ?: 10.0f
+            editor.putFloat("MAX_DAILY_LOSS", cbVal)
+
             editor.putBoolean("PAUSE_ON_LOSS", switchPauseOnLoss.isChecked)
 
             editor.apply()

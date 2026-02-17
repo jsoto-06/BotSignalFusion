@@ -56,9 +56,27 @@
             app:boxBackgroundColor="@color/bg_input"
             app:endIconMode="password_toggle"
             app:boxStrokeWidth="0dp"
-            android:layout_marginBottom="24dp">
+            android:layout_marginBottom="12dp">
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/etApiSecret"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textPassword"
+                android:textColor="@color/text_primary"
+                android:singleLine="true"/>
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Passphrase (Contraseña API)"
+            android:textColorHint="@color/text_secondary"
+            app:boxBackgroundColor="@color/bg_input"
+            app:endIconMode="password_toggle"
+            app:boxStrokeWidth="0dp"
+            android:layout_marginBottom="24dp">
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etApiPassphrase"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPassword"
@@ -262,6 +280,7 @@
                     android:textColor="@color/neon_red"/>
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
+
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
