@@ -12,6 +12,7 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.abs
 
 class TradingService : Service() {
 
@@ -20,7 +21,7 @@ class TradingService : Service() {
         var currentBalance = 0.0
         var logHistory = StringBuilder()
 
-        // 🟢 ESTADO GLOBAL (Para que la UI lo lea siempre)
+        // 🟢 ESTADO GLOBAL
         var posicionAbierta = false
         var monedaConPosicion = ""
         var tipoPosicion = ""
@@ -30,20 +31,43 @@ class TradingService : Service() {
         var lastPrice = "0.0"
         var lastRSI = "--"
         var currentStatus = "Iniciando..."
+
+        // 📊 ESTADÍSTICAS
+        var totalTrades = 0
+        var tradesGanados = 0
+        var tradesPerdidos = 0
     }
 
     private val client = OkHttpClient()
     private var job: Job? = null
     private val CHANNEL_ID_FOREGROUND = "SignalFusionChannel"
+    private val CHANNEL_ID_ALERTS = "SignalFusionAlerts"
+
     private lateinit var manualCloseReceiver: BroadcastReceiver
     private var isReceiverRegistered = false
 
-    // Ajustes
-    private var targetTP = 2.0
-    private var targetSL = 1.5
+    // --- CONFIGURACIÓN DE RIESGO (CORREGIDA) ---
+    private var targetTP = 2.15 // 2% + 0.15% fees
+    private var targetSL = 1.65 // 1.5% + 0.15% fees
     private var leverage = 5.0
     private var riskPercent = 20.0
-    private var activeStrategy = "MODERADA"
+    private var activeStrategy = "AGRESIVA"
+
+    // Control de Velas (Timeframe Fix)
+    private var lastCandleTime = 0L
+    private val CANDLE_INTERVAL = 60_000L // 1 Minuto fijo por ahora
+
+    // Trailing Stop
+    private var maxPnLAlcanzado = 0.0
+    private var tsActivation = 1.5
+    private var tsCallback = 0.5
+
+    // Circuit Breaker
+    private var initialBalance = 0.0
+    private var maxDailyLoss = 10.0
+    private var consecutiveLosses = 0
+
+    // Credenciales
     private var apiKey = ""
     private var apiSecret = ""
     private var apiPassphrase = ""
@@ -51,6 +75,7 @@ class TradingService : Service() {
     private var activeSymbols = mutableListOf<String>()
     private var currentSymbolIndex = 0
     private val historialPreciosMap = mutableMapOf<String, MutableList<Double>>()
+    private var ultimaOperacionTime = 0L
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -61,17 +86,18 @@ class TradingService : Service() {
         manualCloseReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
                 if (intent?.action == "FORZAR_CIERRE_MANUAL" && posicionAbierta) {
+                    agregarLog("⚠️ BOTÓN PÁNICO: Forzando cierre...")
                     CoroutineScope(Dispatchers.IO).launch { cerrarTradeReal("Manual Panic") }
                 }
-                // 🔥 NUEVO: Responder a peticiones de "Refresh" de la UI
                 if (intent?.action == "SOLICITAR_REFRESH_UI") {
                     actualizarEstadoUI("Sincronizado")
                 }
             }
         }
-        val filter = IntentFilter()
-        filter.addAction("FORZAR_CIERRE_MANUAL")
-        filter.addAction("SOLICITAR_REFRESH_UI")
+        val filter = IntentFilter().apply {
+            addAction("FORZAR_CIERRE_MANUAL")
+            addAction("SOLICITAR_REFRESH_UI")
+        }
         ContextCompat.registerReceiver(this, manualCloseReceiver, filter, ContextCompat.RECEIVER_EXPORTED)
         isReceiverRegistered = true
     }
@@ -80,211 +106,290 @@ class TradingService : Service() {
         sincronizarAjustes()
         CoroutineScope(Dispatchers.IO).launch {
             val saldo = obtenerBalanceBitget()
-            if (saldo != null) {
+            if (saldo != null && saldo > 0) {
                 currentBalance = saldo
+                if (initialBalance == 0.0) initialBalance = currentBalance
                 isRunning = true
-                actualizarEstadoUI("Buscando entradas...")
+                agregarLog("✅ MOTOR v4.0 ONLINE | Saldo: $${"%.2f".format(currentBalance)}")
                 iniciarCicloTrading()
+            } else {
+                agregarLog("❌ ERROR FATAL: Verifica API Keys y Saldo.")
+                stopSelf()
             }
         }
-        startForeground(1, createForegroundNotification("SignalFusion Pro", "Escáner Activo"))
+        startForeground(1, createForegroundNotification("SignalFusion v4.0", "Protección Activa"))
         return START_STICKY
     }
 
     private fun iniciarCicloTrading() {
         job = CoroutineScope(Dispatchers.IO).launch {
+            // Carga inicial limpia
             activeSymbols.forEach { descargarHistorialInicial(it); delay(500) }
+
             while (isActive) {
-                val symbol = if (posicionAbierta) monedaConPosicion else activeSymbols[currentSymbolIndex]
-                val precio = obtenerPrecioReal(symbol)
+                try {
+                    // Circuit Breaker Check
+                    if (currentBalance < initialBalance * (1 - (maxDailyLoss / 100.0))) {
+                        agregarLog("⛔ CIRCUIT BREAKER ACTIVADO. Apagando.")
+                        stopSelf(); break
+                    }
 
-                if (precio > 0) {
-                    lastPrice = precio.toString()
-                    actualizarDatos(symbol, precio)
-                    val hP = historialPreciosMap[symbol] ?: mutableListOf()
+                    val symbol = if (posicionAbierta) monedaConPosicion else activeSymbols[currentSymbolIndex]
+                    val precio = obtenerPrecioReal(symbol)
 
-                    if (hP.size >= 50) {
-                        if (!posicionAbierta) {
-                            ejecutarEstrategia(symbol, precio, hP)
+                    if (precio > 0) {
+                        lastPrice = precio.toString() // Actualización visual rápida
+
+                        // 🔥 TIMEFRAME FIX: Solo añadimos datos al historial cada 60 segundos
+                        if (System.currentTimeMillis() - lastCandleTime >= CANDLE_INTERVAL) {
+                            actualizarDatosVela(symbol, precio)
+                            lastCandleTime = System.currentTimeMillis()
+                        }
+
+                        val hP = historialPreciosMap[symbol] ?: mutableListOf()
+
+                        // Solo operamos si tenemos una base de datos sólida
+                        if (hP.size >= 50) {
+                            if (!posicionAbierta) {
+                                ejecutarEstrategia(symbol, precio, hP)
+                            } else {
+                                gestionarSalida(symbol, precio)
+                            }
                         } else {
-                            gestionarSalida(symbol, precio)
+                            actualizarEstadoUI("📥 Calibrando $symbol (${hP.size}/50)")
                         }
                     }
+
+                    if (!posicionAbierta) currentSymbolIndex = (currentSymbolIndex + 1) % activeSymbols.size
+
+                } catch (e: Exception) {
+                    agregarLog("⚠️ Loop Warning: ${e.message}")
                 }
-                if (!posicionAbierta) currentSymbolIndex = (currentSymbolIndex + 1) % activeSymbols.size
-                actualizarEstadoUI(if (posicionAbierta) "Operando $symbol" else "Escaneando...")
-                delay(4000)
+
+                // Ciclo rápido para UI, pero el análisis técnico respeta el Timeframe
+                delay(if (posicionAbierta) 2000 else 3000)
             }
         }
     }
 
     private fun ejecutarEstrategia(symbol: String, precio: Double, hP: List<Double>) {
         val rsi = Indicadores.calcularRSI(hP, 14)
-        lastRSI = rsi.toInt().toString()
+        val ema9 = Indicadores.calcularEMA(hP, 9)
+        val ema21 = Indicadores.calcularEMA(hP, 21)
 
+        lastRSI = "%.0f".format(rsi)
+        actualizarEstadoUI("Escaneando $symbol | RSI: $lastRSI")
+
+        // Cooldown de seguridad (1 minuto entre operaciones)
+        if (System.currentTimeMillis() - ultimaOperacionTime < 60000) return
+
+        // ESTRATEGIA AGRESIVA MEJORADA (Doble Confirmación)
         if (activeStrategy == "AGRESIVA") {
-            if (rsi < 40) abrirTradeReal(symbol, precio, "LONG")
-            else if (rsi > 60) abrirTradeReal(symbol, precio, "SHORT")
-        } else {
-            val ema9 = Indicadores.calcularEMA(hP, 9)
-            val ema21 = Indicadores.calcularEMA(hP, 21)
+            // RSI en extremos + Cruce de EMAs
+            if (rsi < 45 && ema9 > ema21) abrirTradeReal(symbol, precio, "LONG")
+            else if (rsi > 55 && ema9 < ema21) abrirTradeReal(symbol, precio, "SHORT")
+        }
+        else {
+            // MODERADA (Más estricta)
             if (rsi < 35 && ema9 > ema21) abrirTradeReal(symbol, precio, "LONG")
             else if (rsi > 65 && ema9 < ema21) abrirTradeReal(symbol, precio, "SHORT")
         }
     }
 
     private fun gestionarSalida(symbol: String, precio: Double) {
-        val pnl = calcularPnL(precio)
-        if (pnl >= targetTP) cerrarTradeReal("Take Profit ✅")
-        else if (pnl <= -targetSL) cerrarTradeReal("Stop Loss 🛑")
+        val pnlNeto = calcularPnL(precio, conFees = true)
+        if (pnlNeto > maxPnLAlcanzado) maxPnLAlcanzado = pnlNeto
+
+        actualizarEstadoUI("Operando: ${"%.2f".format(pnlNeto)}%")
+
+        if (pnlNeto >= targetTP) cerrarTradeReal("Take Profit ✅")
+        else if (pnlNeto <= -targetSL) cerrarTradeReal("Stop Loss 🛑")
+        else if (maxPnLAlcanzado >= tsActivation && (maxPnLAlcanzado - pnlNeto) >= tsCallback) {
+            cerrarTradeReal("Trailing Stop 🛡️")
+        }
     }
 
     private fun abrirTradeReal(symbol: String, precio: Double, tipo: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            // 1. Set Leverage
-            val levBody = JSONObject().apply {
+            // 1. Configurar Leverage
+            val levJson = JSONObject().apply {
                 put("symbol", symbol); put("productType", "usdt-futures")
                 put("marginCoin", "USDT"); put("leverage", leverage.toInt().toString())
                 put("holdSide", if (tipo == "LONG") "long" else "short")
             }
-            BitgetUtils.authenticatedPost("/api/v2/mix/account/set-leverage", levBody.toString(), apiKey, apiSecret, apiPassphrase)
+            BitgetUtils.authenticatedPost("/api/v2/mix/account/set-leverage", levJson.toString(), apiKey, apiSecret, apiPassphrase)
 
-            // 2. Place Order
-            val margenUsdt = currentBalance * (riskPercent / 100.0)
-            val sizeAmount = (margenUsdt * leverage) / precio
-            val sizeStr = String.format(Locale.US, if (symbol.contains("XRP")) "%.0f" else "%.1f", sizeAmount)
+            // 2. GESTIÓN DE RIESGO SEGURA (Matemática corregida)
+            // Usamos solo un % del balance como margen, NO del total apalancado
+            val margenDeseado = currentBalance * (riskPercent / 100.0)
+            val sizeAmount = (margenDeseado * leverage) / precio
 
-            val jsonBody = JSONObject().apply {
+            // Corrección de Decimales (Size format)
+            val precision = when {
+                symbol.contains("BTC") -> 3
+                symbol.contains("ETH") -> 2
+                symbol.contains("SOL") -> 1
+                symbol.contains("XRP") -> 0
+                else -> 1
+            }
+            val sizeStr = String.format(Locale.US, "%.${precision}f", sizeAmount)
+
+            if (sizeStr.toDouble() <= 0.0) {
+                agregarLog("⚠️ Capital insuficiente para $symbol ($riskPercent%)")
+                return@launch
+            }
+
+            agregarLog("📤 ORDEN: $tipo $sizeStr $symbol (Margen: $${"%.2f".format(margenDeseado)})")
+
+            // 3. Ejecutar Orden
+            val ordenJson = JSONObject().apply {
                 put("symbol", symbol); put("productType", "usdt-futures")
                 put("marginCoin", "USDT"); put("marginMode", "crossed")
                 put("side", if (tipo == "LONG") "buy" else "sell")
                 put("tradeSide", "open"); put("orderType", "market"); put("size", sizeStr)
             }
 
-            val resp = BitgetUtils.authenticatedPost("/api/v2/mix/order/place-order", jsonBody.toString(), apiKey, apiSecret, apiPassphrase)
-            if (resp != null && resp.contains("00000")) {
-                posicionAbierta = true
-                monedaConPosicion = symbol
-                tipoPosicion = tipo
-                precioEntrada = precio
-                agregarLog("🚀 COMPRA: $tipo $symbol")
-                actualizarEstadoUI("POSICIÓN ABIERTA")
+            val resp = BitgetUtils.authenticatedPost("/api/v2/mix/order/place-order", ordenJson.toString(), apiKey, apiSecret, apiPassphrase)
+
+            // 4. Validación de Respuesta (Manejo de Errores)
+            if (resp != null) {
+                val json = JSONObject(resp)
+                if (json.optString("code") == "00000") {
+                    // ÉXITO: Validamos llenado
+                    posicionAbierta = true
+                    monedaConPosicion = symbol
+                    tipoPosicion = tipo
+                    precioEntrada = precio
+                    maxPnLAlcanzado = -0.2 // Empezamos negativos por fees
+                    ultimaOperacionTime = System.currentTimeMillis()
+
+                    totalTrades++
+                    agregarLog("✅ EJECUTADO: $symbol")
+                    actualizarEstadoUI("🚀 POSICIÓN ACTIVA")
+                    enviarAlertaPush("NUEVA POSICIÓN 🚀", "$tipo $symbol", false)
+                } else {
+                    val error = json.optString("msg")
+                    agregarLog("❌ RECHAZADO: $error")
+                }
+            } else {
+                agregarLog("❌ ERROR DE RED: Sin respuesta")
             }
         }
     }
 
     private fun cerrarTradeReal(motivo: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            val jsonBody = JSONObject().apply {
+            val json = JSONObject().apply {
                 put("symbol", monedaConPosicion); put("productType", "usdt-futures")
                 put("marginCoin", "USDT"); put("marginMode", "crossed")
                 put("side", if (tipoPosicion == "LONG") "sell" else "buy")
                 put("tradeSide", "close"); put("orderType", "market"); put("size", "0")
             }
-            val resp = BitgetUtils.authenticatedPost("/api/v2/mix/order/place-order", jsonBody.toString(), apiKey, apiSecret, apiPassphrase)
+
+            val resp = BitgetUtils.authenticatedPost("/api/v2/mix/order/place-order", json.toString(), apiKey, apiSecret, apiPassphrase)
+
             if (resp != null && resp.contains("00000")) {
+                val pnlFinal = calcularPnL(lastPrice.toDoubleOrNull() ?: precioEntrada, true)
+                if (pnlFinal > 0) { tradesGanados++; consecutiveLosses = 0 } else { tradesPerdidos++; consecutiveLosses++ }
+
+                val oldSymbol = monedaConPosicion
                 posicionAbierta = false
-                val m = monedaConPosicion
                 monedaConPosicion = ""
+
                 obtenerBalanceBitget()?.let { currentBalance = it }
-                agregarLog("🏁 $motivo en $m")
-                actualizarEstadoUI("Buscando señales...")
+                agregarLog("🏁 CERRADO ($motivo): $oldSymbol")
+                actualizarEstadoUI("Buscando entradas...")
+                enviarAlertaPush("TRADE CERRADO 💰", "PnL: ${"%.2f".format(pnlFinal)}%", pnlFinal > 0)
+            } else {
+                agregarLog("❌ FALLO AL CERRAR: $resp")
             }
         }
     }
 
-    private fun actualizarEstadoUI(mensaje: String) {
-        val intent = Intent("ACTUALIZACION_TRADING")
-        intent.putExtra("STATUS_MSG", mensaje)
-        intent.putExtra("BALANCE", currentBalance)
-        intent.putExtra("IS_TRADE_OPEN", posicionAbierta)
-
-        if (posicionAbierta) {
-            val pnl = calcularPnL(lastPrice.toDoubleOrNull() ?: precioEntrada)
-            intent.putExtra("TRADE_SYMBOL", monedaConPosicion)
-            intent.putExtra("TRADE_TYPE", tipoPosicion)
-            intent.putExtra("TRADE_PNL", pnl)
-        }
-        sendBroadcast(intent)
-    }
-
-    private fun calcularPnL(actual: Double): Double {
+    private fun calcularPnL(actual: Double, conFees: Boolean): Double {
         if (precioEntrada <= 0) return 0.0
         val diff = if (tipoPosicion == "LONG") actual - precioEntrada else precioEntrada - actual
-        return (diff / precioEntrada) * 100 * leverage
+        val bruto = (diff / precioEntrada) * 100 * leverage
+        // Restar fees aprox (0.12% total * leverage)
+        return if (conFees) bruto - (0.12 * leverage) else bruto
     }
 
-    private fun sincronizarAjustes() {
-        val prefs = getSharedPreferences("BotConfig", Context.MODE_PRIVATE)
-        apiKey = prefs.getString("API_KEY", "") ?: ""
-        apiSecret = prefs.getString("SECRET_KEY", "") ?: ""
-        apiPassphrase = prefs.getString("API_PASSPHRASE", "") ?: ""
-        leverage = prefs.getInt("LEVERAGE", 5).toDouble()
-        riskPercent = prefs.getString("RISK_PERCENT", "20.0")?.toDoubleOrNull() ?: 20.0
-        activeStrategy = prefs.getString("STRATEGY", "MODERADA") ?: "MODERADA"
+    // --- DATOS Y HERRAMIENTAS ---
 
-        activeSymbols.clear()
-        if (prefs.getBoolean("COIN_BTC", true)) activeSymbols.add("BTCUSDT")
-        if (prefs.getBoolean("COIN_ETH", false)) activeSymbols.add("ETHUSDT")
-        if (prefs.getBoolean("COIN_SOL", false)) activeSymbols.add("SOLUSDT")
-        if (prefs.getBoolean("COIN_XRP", false)) activeSymbols.add("XRPUSDT")
-    }
-
-    private suspend fun obtenerBalanceBitget(): Double? = withContext(Dispatchers.IO) {
-        val jsonStr = BitgetUtils.authenticatedGet("/api/v2/mix/account/accounts?productType=USDT-FUTURES", apiKey, apiSecret, apiPassphrase)
-        try {
-            val data = JSONObject(jsonStr).getJSONArray("data")
-            for (i in 0 until data.length()) {
-                val asset = data.getJSONObject(i)
-                if (asset.getString("marginCoin") == "USDT") return@withContext asset.getString("available").toDouble()
-            }
-        } catch (e: Exception) {}
-        null
-    }
-
-    private suspend fun obtenerPrecioReal(s: String): Double = withContext(Dispatchers.IO) {
-        try {
-            val url = "https://api.bitget.com/api/v2/mix/market/ticker?symbol=$s&productType=USDT-FUTURES"
-            val resp = client.newCall(Request.Builder().url(url).build()).execute().body?.string()
-            JSONObject(resp).getJSONArray("data").getJSONObject(0).getString("lastPr").toDouble()
-        } catch (e: Exception) { 0.0 }
+    private fun actualizarDatosVela(symbol: String, precio: Double) {
+        val lista = historialPreciosMap[symbol] ?: return
+        lista.add(precio)
+        if (lista.size > 50) lista.removeAt(0)
+        // Aquí es donde el RSI cobra sentido, solo se actualiza cada 60s
     }
 
     private suspend fun descargarHistorialInicial(s: String) = withContext(Dispatchers.IO) {
         try {
-            val url = "https://api.bitget.com/api/v2/mix/market/candles?symbol=$s&productType=USDT-FUTURES&granularity=1m&limit=100"
-            val resp = client.newCall(Request.Builder().url(url).build()).execute().body?.string()
-            val data = JSONObject(resp).getJSONArray("data")
+            val url = "https://api.bitget.com/api/v2/mix/market/candles?symbol=$s&productType=USDT-FUTURES&granularity=1m&limit=50"
+            val body = client.newCall(Request.Builder().url(url).build()).execute().body?.string()
+            val data = JSONObject(body ?: "{}").getJSONArray("data")
             val precios = mutableListOf<Double>()
             for (i in 0 until data.length()) { precios.add(data.getJSONArray(i).getString(4).toDouble()) }
             historialPreciosMap[s] = precios
         } catch (e: Exception) {}
     }
 
-    private fun actualizarDatos(s: String, p: Double) {
-        val lista = historialPreciosMap[s] ?: return
-        lista.add(p); if (lista.size > 100) lista.removeAt(0)
+    private fun actualizarEstadoUI(mensaje: String) {
+        val i = Intent("ACTUALIZACION_TRADING")
+        i.putExtra("STATUS_MSG", mensaje); i.putExtra("BALANCE", currentBalance)
+        i.putExtra("IS_TRADE_OPEN", posicionAbierta)
+        if (posicionAbierta) {
+            val pnl = calcularPnL(lastPrice.toDoubleOrNull() ?: precioEntrada, true)
+            val pnlCash = (pnl / 100) * (currentBalance * (riskPercent / 100.0))
+            i.putExtra("TRADE_SYMBOL", monedaConPosicion); i.putExtra("TRADE_TYPE", tipoPosicion)
+            i.putExtra("TRADE_PNL", pnl); i.putExtra("TRADE_PNL_CASH", pnlCash)
+        }
+        sendBroadcast(i)
+    }
+
+    private suspend fun obtenerBalanceBitget(): Double? = withContext(Dispatchers.IO) {
+        val resp = BitgetUtils.authenticatedGet("/api/v2/mix/account/accounts?productType=USDT-FUTURES", apiKey, apiSecret, apiPassphrase)
+        try { JSONObject(resp ?: "{}").getJSONArray("data").getJSONObject(0).getString("available").toDouble() } catch (e: Exception) { null }
+    }
+
+    private suspend fun obtenerPrecioReal(s: String): Double = withContext(Dispatchers.IO) {
+        try {
+            val url = "https://api.bitget.com/api/v2/mix/market/ticker?symbol=$s&productType=USDT-FUTURES"
+            val body = client.newCall(Request.Builder().url(url).build()).execute().body?.string()
+            JSONObject(body ?: "{}").getJSONArray("data").getJSONObject(0).getString("lastPr").toDouble()
+        } catch (e: Exception) { 0.0 }
+    }
+
+    private fun sincronizarAjustes() {
+        val p = getSharedPreferences("BotConfig", Context.MODE_PRIVATE)
+        apiKey = p.getString("API_KEY", "") ?: ""; apiSecret = p.getString("SECRET_KEY", "") ?: ""; apiPassphrase = p.getString("API_PASSPHRASE", "") ?: ""
+        leverage = p.getInt("LEVERAGE", 5).toDouble()
+        riskPercent = p.getString("RISK_PERCENT", "20.0")?.toDoubleOrNull() ?: 20.0
+
+        activeSymbols.clear()
+        if (p.getBoolean("COIN_BTC", true)) activeSymbols.add("BTCUSDT")
+        if (p.getBoolean("COIN_ETH", false)) activeSymbols.add("ETHUSDT")
+        if (p.getBoolean("COIN_SOL", false)) activeSymbols.add("SOLUSDT")
+        if (p.getBoolean("COIN_XRP", false)) activeSymbols.add("XRPUSDT")
+        if (activeSymbols.isEmpty()) activeSymbols.add("BTCUSDT")
+    }
+
+    private fun agregarLog(m: String) {
+        logHistory.insert(0, "[${SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())}] $m\n")
+        sendBroadcast(Intent("ACTUALIZACION_TRADING").putExtra("LOG_MSG", m))
     }
 
     private fun crearCanalesNotificacion() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val manager = getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(NotificationChannel(CHANNEL_ID_FOREGROUND, "Motor", NotificationManager.IMPORTANCE_LOW))
+            val m = getSystemService(NotificationManager::class.java)
+            m.createNotificationChannel(NotificationChannel(CHANNEL_ID_FOREGROUND, "Motor", NotificationManager.IMPORTANCE_LOW))
+            m.createNotificationChannel(NotificationChannel(CHANNEL_ID_ALERTS, "Alertas", NotificationManager.IMPORTANCE_HIGH))
         }
     }
-
-    private fun createForegroundNotification(t: String, c: String) = NotificationCompat.Builder(this, CHANNEL_ID_FOREGROUND)
-        .setContentTitle(t).setContentText(c).setSmallIcon(android.R.drawable.ic_menu_compass).setOngoing(true).build()
-
-    private fun agregarLog(m: String) {
-        val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
-        logHistory.insert(0, "[$time] $m\n")
-        sendBroadcast(Intent("ACTUALIZACION_TRADING").putExtra("LOG_MSG", "[$time] $m\n"))
+    private fun createForegroundNotification(t: String, c: String) = NotificationCompat.Builder(this, CHANNEL_ID_FOREGROUND).setContentTitle(t).setContentText(c).setSmallIcon(android.R.drawable.ic_menu_compass).build()
+    private fun enviarAlertaPush(t: String, m: String, c: Boolean) {
+        getSystemService(NotificationManager::class.java).notify(System.currentTimeMillis().toInt(), NotificationCompat.Builder(this, CHANNEL_ID_ALERTS).setContentTitle(t).setContentText(m).setSmallIcon(android.R.drawable.stat_sys_warning).build())
     }
 
-    override fun onDestroy() {
-        isRunning = false; job?.cancel()
-        if (isReceiverRegistered) unregisterReceiver(manualCloseReceiver)
-        super.onDestroy()
-    }
+    override fun onDestroy() { isRunning = false; job?.cancel(); if(isReceiverRegistered) unregisterReceiver(manualCloseReceiver); super.onDestroy() }
 }
