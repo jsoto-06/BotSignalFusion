@@ -1,116 +1,97 @@
-# 🚀 SignalFusion: Autonomous Bitget Trading Bot
+# 🚀 SignalFusion Bot - Android Crypto Trading
 
 ![Kotlin](https://img.shields.io/badge/Kotlin-1.9.0-purple.svg?style=flat&logo=kotlin)
 ![Platform](https://img.shields.io/badge/Platform-Android-green.svg?style=flat&logo=android)
-![API](https://img.shields.io/badge/Exchange-Bitget_V2-blue.svg?style=flat&logo=bitget)
-![License](https://img.shields.io/badge/License-MIT-orange.svg?style=flat)
+![Exchange](https://img.shields.io/badge/Exchange-Bitget_Futures-cyan.svg?style=flat&logo=bitcoin)
+![Status](https://img.shields.io/badge/Status-Active_v4.0-success.svg)
 
-**SignalFusion** is a high-frequency, algorithmic trading bot designed for Android devices. It operates as a persistent Foreground Service, scanning the cryptocurrency market 24/7 to execute trades on **Bitget USDT-M Futures** autonomously.
+**SignalFusion** es un bot de trading algorítmico autónomo diseñado para operar en el mercado de futuros de **Bitget (USDT-M)**. Se ejecuta como un Servicio en Primer Plano (Foreground Service) en Android, permitiendo operaciones 24/7 directamente desde tu dispositivo móvil.
 
-Unlike simple signal notifyers, SignalFusion **executes orders directly** on your exchange account with built-in risk management, dynamic strategies, and multi-asset scanning.
-
----
-
-## 📱 Features
-
-### 🧠 Intelligent Core
-* **Multi-Asset Scanner:** Simultaneously monitors **BTC, ETH, SOL, and XRP** in a round-robin cycle.
-* **Background Operation:** Runs as a robust Android Service (`ForegroundService`), ensuring execution even when the screen is off.
-* **Real-Time Analysis:** Fetches candlestick data (1m/5m/15m) and calculates indicators (RSI, EMA, ATR, Volume) locally.
-
-### 🛡️ Risk Management (The "Shield")
-* **Hard Stop Loss (SL) & Take Profit (TP):** Pre-calculated before entry.
-* **Trailing Stop:** Secures profits when the price moves in your favor.
-* **Circuit Breaker:** Automatically shuts down the bot if daily losses exceed a defined threshold (e.g., 10%).
-* **Cooldown System:** Prevents over-trading by enforcing pauses between operations.
-* **Anti-Streak Protection:** Pauses trading for 1 hour after 5 consecutive losses.
-
-### ⚙️ Strategies
-1.  **🛡️ Moderate (Trend Following):**
-    * Requires strict trend confirmation (EMA9 > EMA21).
-    * Enters only on deep pullbacks (RSI < 35 for Longs).
-    * Volume filter to avoid fake-outs.
-2.  **⚡ Aggressive (Scalping):**
-    * Faster entries based on RSI divergence (RSI < 40).
-    * Ignores strict volume filters for high-frequency opportunities.
-    * Ideal for ranging markets.
-3.  **🚀 Breakout (Volatility):**
-    * Detects volatility expansion using ATR and Bollinger Band simulations.
-    * Enters when price aggressively breaks resistance/support with momentum.
+El sistema utiliza una arquitectura de **Fusión de Señales** basada en RSI, EMAs y Volumen para detectar entradas de alta probabilidad (Pullbacks) y gestiona la salida con un sistema dinámico de Trailing Stop.
 
 ---
 
-## 📸 Screenshots
+## 📱 Características Principales
 
-| Dashboard | Settings & Config | Active Trade |
-|:---:|:---:|:---:|
-| *(Place your screenshot here)* | *(Place your screenshot here)* | *(Place your screenshot here)* |
-| *Real-time Scanner* | *API & Strategy Setup* | *Live PnL Tracking* |
+### 🧠 Motor de Trading Inteligente
+* **Análisis en Tiempo Real:** Procesa velas de 1 minuto (`1m`) sincronizadas con la API V2 de Bitget.
+* **Filtro de Tendencia:** Utiliza medias móviles exponenciales (EMA 9/21/50) para operar solo a favor de la tendencia.
+* **Gestión de Ruido:** Sistema de "Timeframe Lock" para evitar señales falsas en micro-movimientos.
 
----
+### 🛡️ Gestión de Riesgo Profesional (v4.0)
+* **Cálculo de Posición Dinámico:** Calcula el tamaño de la orden basado en el margen exacto en USDT, evitando liquidaciones por sobre-apalancamiento.
+* **Protección de Ganancias (Trailing Stop):** Asegura beneficios cuando el precio se mueve a favor (+1.5%) y cierra si retrocede (0.5%).
+* **Circuit Breaker:** Apagado de emergencia automático si la cuenta pierde un 10% en una sesión.
+* **Cálculo de Fees Neto:** El PnL mostrado descuenta automáticamente las comisiones de Bitget (~0.12%).
 
-## 🛠️ Installation
-
-### Prerequisites
-* Android Studio Iguana (or newer).
-* Android Device with Android 8.0 (Oreo) or higher.
-* **Bitget Account** with Futures enabled.
-
-### Setup
-1.  **Clone the repository:**
-    ```bash
-    git clone [https://github.com/jsoto-06/BitgetBot-SignalFusion.git](https://github.com/your-username/BitgetBot-SignalFusion.git)
-    ```
-2.  **Open in Android Studio** and let Gradle sync.
-3.  **Permissions:** Ensure your device allows the app to run in the background (Settings > Apps > SignalFusion > Battery > **Unrestricted**).
-4.  **Build & Run** on your device.
+### ⚡ Interfaz "Inmortal"
+* **Sincronización Instantánea:** La UI se actualiza milisegundos después de que el Exchange confirma una orden.
+* **Persistencia:** Tarjeta de estado siempre visible, mostrando si el bot está "Escaneando" u "Operando".
+* **Botón de Pánico:** Cierre manual de emergencia con prioridad alta.
 
 ---
 
-## 🔑 Configuration
+## 📊 Estrategias Incluidas
 
-The bot is designed to be **Secure by Default**. API Keys are **NEVER** hardcoded.
+El bot opera bajo dos lógicas principales configurables:
 
-1.  Open the App and go to **Settings (⚙️)**.
-2.  **API Connection:**
-    * Enter your **API Key**.
-    * Enter your **Secret Key**.
-    * Enter your **Passphrase** (Bitget Requirement).
-3.  **Select Assets:** Toggle switches for BTC, ETH, SOL, XRP.
-4.  **Risk Settings:**
-    * Define Leverage (e.g., 5x, 10x).
-    * Set Risk % per trade (e.g., 20% of balance).
-5.  **Save & Start.**
-
-> **Security Note:** All credentials are stored locally using Android's `SharedPreferences` in private mode. They are never sent to any third-party server, only directly to Bitget API endpoints.
+| Estrategia | Perfil | Indicadores de Entrada | Objetivo |
+| :--- | :--- | :--- | :--- |
+| **AGRESIVA** 🚀 | Alta Frecuencia | RSI < 45 (Long) / > 55 (Short) + EMA Cross | Capturar retrocesos rápidos en tendencias fuertes. |
+| **MODERADA** 🛡️ | Conservadora | RSI < 35 (Long) / > 65 (Short) + EMA + Volumen | Entradas en zonas de sobrecompra/sobreventa extremas. |
 
 ---
 
-## 🏗️ Architecture
+## 🛠️ Stack Tecnológico
 
-The project follows a modular architecture:
-
-* **`TradingService.kt`**: The brain. Handles the infinite loop, API calls, strategy logic, and order execution.
-* **`BitgetUtils.kt`**: Handles HMAC-SHA256 signing and HTTP requests to Bitget V2 API.
-* **`Indicadores.kt`**: Mathematical utility class for calculating RSI, EMA, and ATR from raw candle data.
-* **`SettingsFragment.kt`**: UI controller for managing user preferences.
-
----
-
-## ⚠️ Disclaimer
-
-**USE AT YOUR OWN RISK.**
-
-This software is for educational purposes only. Cryptocurrency trading involves a high level of risk and may not be suitable for all investors. You could lose some or all of your initial investment. The developers of SignalFusion are not responsible for any financial losses incurred while using this bot.
-
-Always test with a small amount (or Demo account) before deploying significant capital.
+* **Lenguaje:** Kotlin
+* **Arquitectura:** Android Service (Background processing) + BroadcastReceivers.
+* **Red:** OkHttp3 (Peticiones REST API síncronas/asíncronas).
+* **Parseo:** JSON nativo (org.json).
+* **API:** Bitget V2 Mix API (Futuros).
 
 ---
 
-## 📄 License
+## ⚙️ Configuración y Requisitos
 
-Distributed under the MIT License. See `LICENSE` for more information.
+Para compilar y ejecutar este proyecto necesitas:
+
+1.  **Android Studio Iguana** (o superior).
+2.  Una cuenta en **Bitget** con futuros habilitados.
+3.  **API Keys** (Read + Trade) generadas en Bitget.
+
+### Pasos de Instalación
+1.  Clonar el repositorio.
+2.  Abrir en Android Studio y sincronizar Gradle.
+3.  Ejecutar en un dispositivo físico (recomendado) o emulador.
+4.  Ir a la pestaña **Ajustes** e introducir:
+    * API Key, Secret Key, Passphrase.
+    * Riesgo (Recomendado: 30% - 50%).
+    * Apalancamiento (Recomendado: 5x - 10x).
 
 ---
 
-Made with ❤️ and ☕ by [IG:jonathansoto06]
+## ⚠️ Descargo de Responsabilidad (Disclaimer)
+
+Este software es para fines educativos y experimentales. El trading de criptomonedas conlleva un alto nivel de riesgo y puede no ser adecuado para todos los inversores.
+
+* **El autor no se hace responsable** de ninguna pérdida financiera derivada del uso de este bot.
+* Utiliza siempre una gestión de riesgo adecuada y nunca operes con dinero que no puedas permitirte perder.
+* El código almacena las claves localmente en el dispositivo. Asegúrate de proteger tu teléfono.
+
+---
+
+## 📝 Historial de Cambios (Changelog)
+
+### v4.0 - Definitive Architect
+* ✅ **FIX:** Solucionado error crítico de cálculo de tamaño de posición (Margin Mode).
+* ✅ **FIX:** Corregido el timeframe del RSI (ahora respeta velas de 1m reales).
+* ✅ **FEAT:** Implementado Trailing Stop y PnL Neto (después de fees).
+* ✅ **UX:** Tarjeta de estado persistente y logs en tiempo real.
+
+---
+
+Hecho con ❤️☕ by [IG:jonathansoto06]
+---
+
+Made with ❤️ and ☕ 
