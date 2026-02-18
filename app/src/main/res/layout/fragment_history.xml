@@ -3,14 +3,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:background="@drawable/bg_cyberpunk_gradient"
+    android:background="#0A0E17"
     android:padding="16dp">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="RENDIMIENTO TOTAL"
-        android:textColor="@color/text_grey"
+        android:textColor="#888888"
         android:textSize="12sp"
         android:letterSpacing="0.1"
         android:textStyle="bold"
@@ -20,8 +20,8 @@
         android:id="@+id/tvHistoryBalance"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="$1,000.00"
-        android:textColor="@color/neon_green"
+        android:text="$0.00"
+        android:textColor="#00E676"
         android:textSize="32sp"
         android:textStyle="bold"
         android:layout_marginBottom="24dp"/>
@@ -29,22 +29,15 @@
     <com.github.mikephil.charting.charts.LineChart
         android:id="@+id/chartBalance"
         android:layout_width="match_parent"
-        android:layout_height="300dp"
-        android:layout_marginBottom="24dp"/>
+        android:layout_height="200dp"
+        android:layout_marginBottom="24dp"
+        android:visibility="gone"/>
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="ÚLTIMAS OPERACIONES"
-        android:textColor="@color/neon_cyan"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="12dp"/>
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="ÚLTIMAS OPERACIONES"
-        android:textColor="@color/neon_cyan"
+        android:text="ÚLTIMAS OPERACIONES (BITGET)"
+        android:textColor="#00E5FF"
         android:textSize="14sp"
         android:textStyle="bold"
         android:layout_marginBottom="12dp"/>
