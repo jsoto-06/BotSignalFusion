@@ -1,33 +1,30 @@
 package com.example.signalfusion
 
 import kotlin.math.abs
+import kotlin.math.pow
+import kotlin.math.sqrt
 
 object Indicadores {
 
-    /**
-     * Calcula el RSI (Relative Strength Index)
-     * Utilizado para detectar sobreventa (compra) o sobrecompra (venta)
-     */
+    // ==========================================
+    // 1. INDICADORES BASE (Tu código original)
+    // ==========================================
+
     fun calcularRSI(datos: List<Double>, periodo: Int): Double {
         if (datos.size < periodo + 1) return 50.0
 
         var ganancias = 0.0
         var perdidas = 0.0
 
-        // Primera iteración para establecer el promedio inicial
         for (i in 1..periodo) {
             val diferencia = datos[i] - datos[i - 1]
-            if (diferencia > 0) {
-                ganancias += diferencia
-            } else {
-                perdidas += abs(diferencia)
-            }
+            if (diferencia > 0) ganancias += diferencia
+            else perdidas += abs(diferencia)
         }
 
         var gananciaMedia = ganancias / periodo
         var perdidaMedia = perdidas / periodo
 
-        // Suavizado de Wilder para el resto de los datos
         for (i in periodo + 1 until datos.size) {
             val diferencia = datos[i] - datos[i - 1]
             val gananciaActual = if (diferencia > 0) diferencia else 0.0
@@ -43,10 +40,6 @@ object Indicadores {
         return 100.0 - (100.0 / (1.0 + rs))
     }
 
-    /**
-     * Calcula la EMA (Media Móvil Exponencial)
-     * Ayuda a identificar la dirección de la tendencia
-     */
     fun calcularEMA(datos: List<Double>, periodo: Int): Double {
         if (datos.isEmpty()) return 0.0
         if (datos.size < periodo) return datos.last()
@@ -61,10 +54,6 @@ object Indicadores {
         return ema
     }
 
-    /**
-     * Calcula el ATR (Average True Range)
-     * Mide la volatilidad del mercado
-     */
     fun calcularATR(preciosCierre: List<Double>, periodo: Int = 14): Double {
         if (preciosCierre.size < periodo + 1) return 0.0
 
@@ -88,5 +77,70 @@ object Indicadores {
         } else {
             rangosVerdaderos.average()
         }
+    }
+
+    // ==========================================
+    // 2. INDICADORES ULTIMATE (Nuevos para Fase 2)
+    // ==========================================
+
+    data class EMAs(val fast: Double, val slow: Double, val mid: Double, val trend: Double)
+
+    fun calcularEMAs(datos: List<Double>): EMAs {
+        return EMAs(
+            fast = calcularEMA(datos, 12),
+            slow = calcularEMA(datos, 26),
+            mid = calcularEMA(datos, 50),
+            trend = calcularEMA(datos, 200)
+        )
+    }
+
+    fun calcularBollingerBands(datos: List<Double>, periodo: Int = 20, desviaciones: Double = 2.0): Triple<Double, Double, Double> {
+        if (datos.size < periodo) return Triple(0.0, 0.0, 0.0)
+
+        val subset = datos.takeLast(periodo)
+        val sma = subset.average()
+
+        val variance = subset.map { (it - sma).pow(2) }.average()
+        val stdDev = sqrt(variance)
+
+        val upper = sma + (stdDev * desviaciones)
+        val lower = sma - (stdDev * desviaciones)
+
+        return Triple(upper, sma, lower) // Triple(Superior, Media, Inferior)
+    }
+
+    fun calcularRSIMA(datos: List<Double>, rsiPeriodo: Int = 14, maPeriodo: Int = 7): Double {
+        if (datos.size < rsiPeriodo + maPeriodo) return 50.0
+
+        val rsiHistory = mutableListOf<Double>()
+        for (i in (datos.size - maPeriodo) until datos.size) {
+            val subset = datos.subList(0, i + 1)
+            rsiHistory.add(calcularRSI(subset, rsiPeriodo))
+        }
+
+        return rsiHistory.average()
+    }
+
+    fun calcularMACD(datos: List<Double>, fastPeriod: Int = 12, slowPeriod: Int = 26, signalPeriod: Int = 9): Triple<Double, Double, Double> {
+        if (datos.size < slowPeriod + signalPeriod) return Triple(0.0, 0.0, 0.0)
+
+        // 1. Array histórico de la línea MACD
+        val macdLineValues = mutableListOf<Double>()
+        for (i in slowPeriod..datos.size) {
+            val subset = datos.subList(0, i)
+            val emaFast = calcularEMA(subset, fastPeriod)
+            val emaSlow = calcularEMA(subset, slowPeriod)
+            macdLineValues.add(emaFast - emaSlow)
+        }
+
+        val macdLineActual = macdLineValues.last()
+
+        // 2. Línea Signal (EMA de la línea MACD)
+        val signalLine = calcularEMA(macdLineValues, signalPeriod)
+
+        // 3. Histograma
+        val histograma = macdLineActual - signalLine
+
+        return Triple(macdLineActual, signalLine, histograma)
     }
 }
