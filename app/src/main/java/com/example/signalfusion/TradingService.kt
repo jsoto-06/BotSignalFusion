@@ -33,41 +33,35 @@ class TradingService : Service() {
 
     private val client = OkHttpClient()
     private var job: Job? = null
+
+    // 🔥 NUEVO: WAKELOCK (Para que no se duerma la CPU)
+    private var wakeLock: PowerManager.WakeLock? = null
+
     private val CHANNEL_ID_FOREGROUND = "SignalFusionChannel"
     private val CHANNEL_ID_ALERTS = "SignalFusionAlerts"
 
     private lateinit var manualCloseReceiver: BroadcastReceiver
     private var isReceiverRegistered = false
 
-    // --- CONFIGURACIÓN DINÁMICA ---
+    // Configuración
     private var targetTP = 2.15
     private var targetSL = 1.65
     private var leverage = 5.0
     private var riskPercent = 50.0
     private var activeStrategy = "AGRESIVA"
+    private var candleTimeframe = "1m"
+    private var candleIntervalMs = 60_000L
 
-    // 🔥 NUEVO: Temporalidad Dinámica
-    private var candleTimeframe = "1m" // Valor por defecto
-    private var candleIntervalMs = 60_000L // 1 minuto en milisegundos
-
-    // Control de Velas
+    // Variables internas
     private var lastCandleTime = 0L
-
-    // Trailing Stop
     private var maxPnLAlcanzado = 0.0
     private var tsActivation = 1.5
     private var tsCallback = 0.5
-
-    // Circuit Breaker
     private var initialBalance = 0.0
     private var maxDailyLoss = 10.0
-    private var consecutiveLosses = 0
-
-    // Credenciales
     private var apiKey = ""
     private var apiSecret = ""
     private var apiPassphrase = ""
-
     private var activeSymbols = mutableListOf<String>()
     private var currentSymbolIndex = 0
     private val historialPreciosMap = mutableMapOf<String, MutableList<Double>>()
@@ -78,6 +72,11 @@ class TradingService : Service() {
     override fun onCreate() {
         super.onCreate()
         crearCanalesNotificacion()
+
+        // 🔥 ACTIVAR WAKELOCK
+        val powerManager = getSystemService(POWER_SERVICE) as PowerManager
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "SignalFusion::TradingWakeLock")
+        wakeLock?.acquire(24 * 60 * 60 * 1000L) // Mantener despierto hasta 24h o hasta que se apague
 
         manualCloseReceiver = object : BroadcastReceiver() {
             override fun onReceive(context: Context?, intent: Intent?) {
@@ -110,14 +109,15 @@ class TradingService : Service() {
                 currentBalance = saldo
                 if (initialBalance == 0.0) initialBalance = currentBalance
                 isRunning = true
-                agregarLog("✅ MOTOR V4.8 | Riesgo: $riskPercent% | TF: $candleTimeframe")
+                // Log para confirmar que leyó el TF bien
+                agregarLog("✅ MOTOR ONLINE | TF: $candleTimeframe | Riesgo: $riskPercent%")
                 iniciarCicloTrading()
             } else {
                 agregarLog("❌ ERROR: Revisa API Keys")
                 stopSelf()
             }
         }
-        startForeground(1, createForegroundNotification("SignalFusion Pro", "Protección Activa"))
+        startForeground(1, createForegroundNotification("SignalFusion Pro", "Escaneando en 2º Plano..."))
         return START_STICKY
     }
 
@@ -139,7 +139,6 @@ class TradingService : Service() {
                     if (precio > 0) {
                         lastPrice = precio.toString()
 
-                        // Lógica de velas ajustada al timeframe
                         if (System.currentTimeMillis() - lastCandleTime >= candleIntervalMs) {
                             actualizarDatosVela(symbol, precio)
                             lastCandleTime = System.currentTimeMillis()
@@ -193,12 +192,10 @@ class TradingService : Service() {
 
         if (System.currentTimeMillis() - ultimaOperacionTime < 60000) return
 
-        // LÓGICA DE ESTRATEGIA (Agresiva vs Moderada/Conservadora)
         if (activeStrategy == "AGRESIVA") {
             if (rsi < 45 && ema9 > ema21) abrirTradeReal(symbol, precio, "LONG")
             else if (rsi > 55 && ema9 < ema21) abrirTradeReal(symbol, precio, "SHORT")
         } else {
-            // ESTRATEGIA MODERADA (Valores más seguros)
             if (rsi < 35 && ema9 > ema21) abrirTradeReal(symbol, precio, "LONG")
             else if (rsi > 65 && ema9 < ema21) abrirTradeReal(symbol, precio, "SHORT")
         }
@@ -217,13 +214,11 @@ class TradingService : Service() {
 
     private fun abrirTradeReal(symbol: String, precio: Double, tipo: String) {
         CoroutineScope(Dispatchers.IO).launch {
-
             val margenDeseado = currentBalance * (riskPercent / 100.0)
             val sizeAmount = (margenDeseado * leverage) / precio
 
             var precisionSize = 1
             var precisionPrice = 2
-
             if (symbol.contains("BTC")) { precisionSize = 3; precisionPrice = 1 }
             else if (symbol.contains("ETH")) { precisionSize = 2; precisionPrice = 2 }
             else if (symbol.contains("SOL")) { precisionSize = 1; precisionPrice = 2 }
@@ -232,17 +227,11 @@ class TradingService : Service() {
             val sizeStr = String.format(Locale.US, "%.${precisionSize}f", sizeAmount)
             val sizeFinal = sizeStr.toDouble()
 
+            // LOG DETALLADO
             val costeReal = sizeFinal * precio / leverage
-            agregarLog("🧮 CÁLCULO DE ENTRADA ($symbol):")
-            agregarLog("   • Saldo: $${"%.2f".format(currentBalance)}")
-            agregarLog("   • TF: $candleTimeframe | Riesgo: $riskPercent%")
-            agregarLog("   • Cantidad: $sizeStr")
-            agregarLog("   • Coste: $${"%.2f".format(costeReal)}")
+            agregarLog("🧮 CÁLCULO ($symbol): Meta: $${"%.2f".format(margenDeseado)} | TF: $candleTimeframe")
 
-            if (sizeFinal <= 0.0) {
-                agregarLog("⚠️ Cancelado: Tamaño calculado es 0")
-                return@launch
-            }
+            if (sizeFinal <= 0.0) return@launch
 
             val riskRatio = targetSL / 100.0 / leverage
             val rewardRatio = targetTP / 100.0 / leverage
@@ -251,8 +240,6 @@ class TradingService : Service() {
 
             val slStr = String.format(Locale.US, "%.${precisionPrice}f", slPrice)
             val tpStr = String.format(Locale.US, "%.${precisionPrice}f", tpPrice)
-
-            agregarLog("📤 ORDEN: $tipo $sizeStr | SL: $slStr")
 
             val json = JSONObject()
             json.put("symbol", symbol)
@@ -322,7 +309,6 @@ class TradingService : Service() {
         lista.add(precio); if (lista.size > 50) lista.removeAt(0)
     }
 
-    // 🔥 MODIFICADO: Ahora usa 'candleTimeframe' dinámico
     private suspend fun descargarHistorialInicial(s: String) = withContext(Dispatchers.IO) {
         try {
             val url = "https://api.bitget.com/api/v2/mix/market/candles?symbol=$s&productType=USDT-FUTURES&granularity=$candleTimeframe&limit=50"
@@ -380,16 +366,16 @@ class TradingService : Service() {
         targetSL = p.getString("SL_VAL", "1.65")?.toDoubleOrNull() ?: 1.65
         activeStrategy = p.getString("STRATEGY", "AGRESIVA") ?: "AGRESIVA"
 
-        // 🔥 LECTURA DE TEMPORALIDAD
+        // 🔥 LECTURA DE TEMPORALIDAD CORREGIDA
         val tfStr = p.getString("TIMEFRAME_VAL", "1m") ?: "1m"
         candleTimeframe = tfStr
 
-        // Ajustamos los milisegundos de espera según el timeframe
         candleIntervalMs = when(tfStr) {
-            "5m" -> 300_000L  // 5 * 60 * 1000
-            "15m" -> 900_000L // 15 * 60 * 1000
+            "3m" -> 180_000L
+            "5m" -> 300_000L
+            "15m" -> 900_000L
             "1h" -> 3_600_000L
-            else -> 60_000L // 1m por defecto
+            else -> 60_000L
         }
 
         activeSymbols.clear()
@@ -433,6 +419,8 @@ class TradingService : Service() {
     override fun onDestroy() {
         isRunning = false
         job?.cancel()
+        // 🔥 SOLTAR WAKELOCK AL CERRAR
+        try { wakeLock?.release() } catch (e: Exception) {}
         if(isReceiverRegistered) unregisterReceiver(manualCloseReceiver)
         super.onDestroy()
     }

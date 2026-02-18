@@ -12,10 +12,10 @@ import com.google.android.material.textfield.TextInputEditText
 
 class SettingsFragment : Fragment() {
 
-    // Vistas Anteriores
+    // Vistas
     private lateinit var etApiKey: TextInputEditText
     private lateinit var etApiSecret: TextInputEditText
-    private lateinit var etApiPassphrase: TextInputEditText // 🔥 NUEVO: Passphrase
+    private lateinit var etApiPassphrase: TextInputEditText
 
     private lateinit var etAmount: TextInputEditText
     private lateinit var etRisk: TextInputEditText
@@ -26,28 +26,25 @@ class SettingsFragment : Fragment() {
     private lateinit var switchTurbo: Switch
     private lateinit var btnSave: Button
 
-    // Selector de Estrategia
     private lateinit var rgStrategy: RadioGroup
     private lateinit var rbModerada: RadioButton
     private lateinit var rbAgresiva: RadioButton
     private lateinit var rbBreakout: RadioButton
 
-    // Selector Multi-Moneda
     private lateinit var cbBTC: CheckBox
     private lateinit var cbETH: CheckBox
     private lateinit var cbSOL: CheckBox
     private lateinit var cbXRP: CheckBox
 
-    // Parámetros Avanzados
     private lateinit var spinnerTimeframe: Spinner
     private lateinit var etTrailingStop: TextInputEditText
     private lateinit var etCircuitBreaker: TextInputEditText
     private lateinit var switchPauseOnLoss: MaterialSwitch
 
-    private val timeframes = arrayOf("1m", "5m", "15m", "30m", "1H")
+    // Array de opciones (debe coincidir con lo que espera el motor)
+    private val timeframes = arrayOf("1m", "5m", "15m", "30m", "1h")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        // Asegúrate de usar el layout correcto (fragment_settings)
         return inflater.inflate(R.layout.fragment_settings, container, false)
     }
 
@@ -58,12 +55,7 @@ class SettingsFragment : Fragment() {
         etApiKey = view.findViewById(R.id.etApiKey)
         etApiSecret = view.findViewById(R.id.etApiSecret)
 
-        // Intentamos vincular la Passphrase. Si el ID no existe en el XML viejo, no crashea.
-        try {
-            etApiPassphrase = view.findViewById(R.id.etApiPassphrase)
-        } catch (e: Exception) {
-            // Si usas un XML antiguo que no tiene este campo, esto evita el crash
-        }
+        try { etApiPassphrase = view.findViewById(R.id.etApiPassphrase) } catch (e: Exception) {}
 
         etAmount = view.findViewById(R.id.etAmount)
         etRisk = view.findViewById(R.id.etRisk)
@@ -84,13 +76,12 @@ class SettingsFragment : Fragment() {
         cbSOL = view.findViewById(R.id.cbSOL)
         cbXRP = view.findViewById(R.id.cbXRP)
 
-        // Avanzados
         spinnerTimeframe = view.findViewById(R.id.spinnerTimeframe)
         etTrailingStop = view.findViewById(R.id.etTrailingStop)
         etCircuitBreaker = view.findViewById(R.id.etCircuitBreaker)
         switchPauseOnLoss = view.findViewById(R.id.switchPauseOnLoss)
 
-        // Configurar Spinner de Temporalidad
+        // Configurar Spinner
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, timeframes)
         spinnerTimeframe.adapter = adapter
 
@@ -99,21 +90,19 @@ class SettingsFragment : Fragment() {
         etApiKey.setText(prefs.getString("API_KEY", ""))
         etApiSecret.setText(prefs.getString("SECRET_KEY", ""))
 
-        // Cargar Passphrase si existe la vista
         if (::etApiPassphrase.isInitialized) {
             etApiPassphrase.setText(prefs.getString("API_PASSPHRASE", ""))
         }
 
         etAmount.setText(prefs.getString("AMOUNT", "1000"))
-        etRisk.setText(prefs.getString("RISK_PERCENT", "5.0"))
-        etTp.setText(prefs.getString("TP_VAL", "2.0"))
-        etSl.setText(prefs.getString("SL_VAL", "1.5"))
+        etRisk.setText(prefs.getString("RISK_PERCENT", "50.0"))
+        etTp.setText(prefs.getString("TP_VAL", "2.15"))
+        etSl.setText(prefs.getString("SL_VAL", "1.65"))
 
         val lev = prefs.getInt("LEVERAGE", 5)
         sbLeverage.progress = lev
         tvLeverageLabel.text = "Apalancamiento: ${lev}x"
 
-        // Actualizamos el slider visualmente
         sbLeverage.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
                 val valor = if (progress < 1) 1 else progress
@@ -125,7 +114,7 @@ class SettingsFragment : Fragment() {
 
         switchTurbo.isChecked = prefs.getBoolean("TURBO_MODE", false)
 
-        val estrategia = prefs.getString("STRATEGY", "MODERADA")
+        val estrategia = prefs.getString("STRATEGY", "AGRESIVA")
         when (estrategia) {
             "MODERADA" -> rbModerada.isChecked = true
             "BREAKOUT" -> rbBreakout.isChecked = true
@@ -137,7 +126,8 @@ class SettingsFragment : Fragment() {
         cbSOL.isChecked = prefs.getBoolean("COIN_SOL", false)
         cbXRP.isChecked = prefs.getBoolean("COIN_XRP", false)
 
-        val savedTf = prefs.getString("TIMEFRAME", "1m")
+        // 🔥 CORRECCIÓN: Leer con "TIMEFRAME_VAL"
+        val savedTf = prefs.getString("TIMEFRAME_VAL", "1m")
         val spinnerPosition = adapter.getPosition(savedTf)
         if (spinnerPosition >= 0) spinnerTimeframe.setSelection(spinnerPosition)
 
@@ -149,11 +139,9 @@ class SettingsFragment : Fragment() {
         btnSave.setOnClickListener {
             val editor = prefs.edit()
 
-            // Datos Básicos
             editor.putString("API_KEY", etApiKey.text.toString().trim())
             editor.putString("SECRET_KEY", etApiSecret.text.toString().trim())
 
-            // Guardar Passphrase
             if (::etApiPassphrase.isInitialized) {
                 editor.putString("API_PASSPHRASE", etApiPassphrase.text.toString().trim())
             }
@@ -180,7 +168,8 @@ class SettingsFragment : Fragment() {
             editor.putBoolean("COIN_SOL", cbSOL.isChecked)
             editor.putBoolean("COIN_XRP", cbXRP.isChecked)
 
-            editor.putString("TIMEFRAME", spinnerTimeframe.selectedItem.toString())
+            // 🔥 CORRECCIÓN: Guardar como "TIMEFRAME_VAL"
+            editor.putString("TIMEFRAME_VAL", spinnerTimeframe.selectedItem.toString())
 
             val tsVal = etTrailingStop.text.toString().toFloatOrNull() ?: 1.3f
             editor.putFloat("TS_ACTIV", tsVal)
@@ -192,7 +181,7 @@ class SettingsFragment : Fragment() {
 
             editor.apply()
 
-            Toast.makeText(requireContext(), "✅ Configuración Guardada", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "✅ Guardado. REINICIA el Motor.", Toast.LENGTH_SHORT).show()
         }
     }
 }
