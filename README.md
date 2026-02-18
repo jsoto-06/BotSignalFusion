@@ -1,10 +1,13 @@
 # 🚀 SignalFusion Pro `v4.9`
 ### **The Immortal Trading Engine for Bitget**
 
-![Platform](https://img.shields.io/badge/Platform-Android-green?style=for-the-badge&logo=android)
-![Language](https://img.shields.io/badge/Language-Kotlin-purple?style=for-the-badge&logo=kotlin)
-![Exchange](https://img.shields.io/badge/Exchange-Bitget-blue?style=for-the-badge)
-![Status](https://img.shields.io/badge/Status-Inmortal-orange?style=for-the-badge)
+
+  
+  ![Platform](https://img.shields.io/badge/Platform-Android-green?style=for-the-badge&logo=android)
+  ![Language](https://img.shields.io/badge/Language-Kotlin-purple?style=for-the-badge&logo=kotlin)
+  ![Exchange](https://img.shields.io/badge/Exchange-Bitget-blue?style=for-the-badge)
+  ![Status](https://img.shields.io/badge/Status-Inmortal-orange?style=for-the-badge)
+</div>
 
 ---
 
@@ -15,7 +18,10 @@
 
 ---
 
-## 💎 Características Exclusive
+
+---
+
+## 💎 Características Exclusivas
 
 * **🛡️ Arquitectura Inmortal (WakeLock):** Implementación de bloqueos de energía a nivel de kernel para impedir que Android suspenda la CPU. Trading ininterrumpido 24/7.
 * **📊 Temporalidad Adaptativa:** Soporte nativo para múltiples timeframes (**1m, 5m, 15m, 30m, 1h**). El bot recalibra su motor matemático según la vela seleccionada.
@@ -60,4 +66,9 @@
 
 ---
 
-**Desarrollado con ❤️ por** [IG: @jonathansoto06](https://instagram.com/jonathansoto06)
+<div align="center">
+  <b>Desarrollado con ❤️ por Jonathan Soto</b><br>
+  <a href="https://instagram.com/jonathansoto06">
+    <img src="https://img.shields.io/badge/Instagram-%40jonathansoto06-E4405F?style=for-the-badge&logo=instagram&logoColor=white" alt="Instagram">
+  </a>
+</div>
