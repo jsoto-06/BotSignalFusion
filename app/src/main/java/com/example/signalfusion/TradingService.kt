@@ -39,11 +39,11 @@ class TradingService : Service() {
     private lateinit var manualCloseReceiver: BroadcastReceiver
     private var isReceiverRegistered = false
 
-    // Configuración Usuario
-    private var targetTP = 2.15
-    private var targetSL = 1.65
+    // 🔧 VALORES SEGUROS POR DEFECTO (Institucional)
+    private var targetTP = 2.5
+    private var targetSL = 1.5
     private var leverage = 5.0
-    private var riskPercent = 50.0
+    private var riskPercent = 3.0
     private var activeStrategy = "AGRESIVA"
     private var candleTimeframe = "5m"
     private var candleIntervalMs = 300_000L
@@ -108,6 +108,7 @@ class TradingService : Service() {
                 if (initialBalance == 0.0) initialBalance = currentBalance
                 isRunning = true
                 agregarLog("✅ MOTOR V5.0 ULTIMATE | TF: $candleTimeframe | Modo: $activeStrategy")
+                agregarLog("💰 Balance: $${"%.2f".format(currentBalance)} | Risk: ${"%.1f".format(riskPercent)}% | Lev: ${leverage.toInt()}x")
                 iniciarCicloTrading()
             } else {
                 agregarLog("❌ ERROR: Revisa API Keys")
@@ -163,23 +164,20 @@ class TradingService : Service() {
     private fun ejecutarEstrategiaUltimate(symbol: String, precio: Double, hP: List<Double>) {
         if (System.currentTimeMillis() - ultimaOperacionTime < 60000) return
 
-        // 1. Cálculos Matemáticos Pesados
         val rsi = Indicadores.calcularRSI(hP, 14)
         val rsiMA = Indicadores.calcularRSIMA(hP, 14, 7)
         val emas = Indicadores.calcularEMAs(hP)
         val bb = Indicadores.calcularBollingerBands(hP)
         val macd = Indicadores.calcularMACD(hP)
 
-        // Actualizar UI
         lastRSI = "%.0f".format(rsi)
         actualizarEstadoUI("Analizando $symbol | RSI: $lastRSI | TF: $candleTimeframe")
 
-        // 2. Empaquetar Market Data
-        // Estimamos High/Low con una micro-volatilidad del 0.2% ya que solo guardamos cierres
+        // 🔧 High/Low realistas al 0.5% para detectar mejor la volatilidad
         val marketData = MarketData(
             price = precio,
-            high = precio * 1.002,
-            low = precio * 0.998,
+            high = precio * 1.005,
+            low = precio * 0.995,
             rsi = rsi,
             rsiMA = rsiMA,
             emaFast = emas.fast,
@@ -194,11 +192,9 @@ class TradingService : Service() {
             macdHist = macd.third
         )
 
-        // 3. Evaluar con el Cerebro asignado a esta moneda
         val cerebro = ultimateStrategies[symbol] ?: return
         val senialFinal = cerebro.evaluate(marketData)
 
-        // 4. Ejecutar si hay confirmación
         if (senialFinal == "LONG") {
             abrirTradeReal(symbol, precio, "LONG", hP)
         } else if (senialFinal == "SHORT") {
@@ -213,12 +209,13 @@ class TradingService : Service() {
         actualizarEstadoUI("Operando: ${"%.2f".format(pnlNeto)}%")
 
         if (maxPnLAlcanzado >= tsActivation && (maxPnLAlcanzado - pnlNeto) >= tsCallback) {
-            cerrarTradeReal("Trailing Stop 🛡️")
+            cerrarTradeReal("Trailing Stop 🛡️ (desde ${"%.2f".format(maxPnLAlcanzado)}%)")
         }
     }
 
     private fun abrirTradeReal(symbol: String, precio: Double, tipo: String, hP: List<Double>) {
         CoroutineScope(Dispatchers.IO).launch {
+            // 🔥 FÓRMULA MATEMÁTICA CORRECTA PARA BITGET (Con Leverage)
             val margenDeseado = currentBalance * (riskPercent / 100.0)
             val sizeAmount = (margenDeseado * leverage) / precio
 
@@ -232,12 +229,25 @@ class TradingService : Service() {
             val sizeStr = String.format(Locale.US, "%.${precisionSize}f", sizeAmount)
             val sizeFinal = sizeStr.toDouble()
 
-            if (sizeFinal <= 0.0) return@launch
+            if (sizeFinal <= 0.0) {
+                agregarLog("⚠️ Size calculado = 0. Operación cancelada.")
+                return@launch
+            }
 
-            // 🔥 V5.0 - STOP LOSS & TAKE PROFIT DINÁMICO (ATR)
+            // ATR Dinámico SL/TP
             val atr = Indicadores.calcularATR(hP, 14)
-            val baseSL = when(candleTimeframe) { "1m", "5m" -> 1.4; "15m" -> 1.2; "1h" -> 0.9; else -> 1.1 }
-            val baseTP = when(candleTimeframe) { "1m", "5m" -> 2.4; "15m" -> 2.0; "1h" -> 1.7; else -> 2.0 }
+            val baseSL = when(candleTimeframe) {
+                "1m", "5m" -> 1.4
+                "15m" -> 1.2
+                "1h" -> 0.9
+                else -> 1.1
+            }
+            val baseTP = when(candleTimeframe) {
+                "1m", "5m" -> 2.4
+                "15m" -> 2.0
+                "1h" -> 1.7
+                else -> 2.0
+            }
 
             val slMult = if (activeStrategy == "AGRESIVA") baseSL * 0.85 else baseSL * 1.2
             val tpMult = if (activeStrategy == "AGRESIVA") baseTP * 1.3 else baseTP * 0.9
@@ -245,7 +255,6 @@ class TradingService : Service() {
             val calcSLDist = atr * slMult
             val calcTPDist = atr * tpMult
 
-            // Combinamos tu % estático con el ATR dinámico por seguridad (El que sea más amplio)
             val minSLDist = precio * (targetSL / 100.0 / leverage)
             val minTPDist = precio * (targetTP / 100.0 / leverage)
 
@@ -258,7 +267,8 @@ class TradingService : Service() {
             val slStr = String.format(Locale.US, "%.${precisionPrice}f", slPrice)
             val tpStr = String.format(Locale.US, "%.${precisionPrice}f", tpPrice)
 
-            agregarLog("🎯 SEÑAL $tipo ($symbol): Score Aprobado | SL Dinámico: $slStr")
+            agregarLog("🎯 SEÑAL $tipo ($symbol) | Score Aprobado")
+            agregarLog("💼 Size: $sizeStr | SL: $slStr | TP: $tpStr")
 
             val json = JSONObject()
             json.put("symbol", symbol)
@@ -282,7 +292,7 @@ class TradingService : Service() {
                 maxPnLAlcanzado = -0.2
                 ultimaOperacionTime = System.currentTimeMillis()
 
-                agregarLog("✅ EJECUTADO: $tipo $symbol")
+                agregarLog("✅ EJECUTADO: $tipo $symbol @ $${"%.2f".format(precio)}")
                 actualizarEstadoUI("🚀 POSICIÓN ACTIVA")
                 enviarAlertaPush("NUEVA POSICIÓN 🚀", "$tipo $symbol", false)
             } else {
@@ -303,12 +313,14 @@ class TradingService : Service() {
             val resp = BitgetUtils.authenticatedPost("/api/v2/mix/order/close-positions", json.toString(), apiKey, apiSecret, apiPassphrase)
 
             if (resp != null && (resp.contains("00000") || resp.contains("success"))) {
+                val pnlFinal = calcularPnL(lastPrice.toDoubleOrNull() ?: precioEntrada, true)
                 posicionAbierta = false
                 monedaConPosicion = ""
+                maxPnLAlcanzado = 0.0
                 obtenerBalanceBitget()?.let { currentBalance = it }
-                agregarLog("🏁 CERRADO EXITOSAMENTE")
+                agregarLog("🏁 CERRADO: PnL = ${"%.2f".format(pnlFinal)}%")
                 actualizarEstadoUI("Buscando entradas...")
-                enviarAlertaPush("CERRADO 💰", "Operación finalizada", true)
+                enviarAlertaPush("CERRADO 💰", "PnL: ${"%.2f".format(pnlFinal)}%", true)
             } else {
                 agregarLog("❌ ERROR AL CERRAR: $resp")
             }
@@ -325,22 +337,23 @@ class TradingService : Service() {
     private fun actualizarDatosVela(symbol: String, precio: Double) {
         val lista = historialPreciosMap[symbol] ?: return
         lista.add(precio)
-        if (lista.size > 250) lista.removeAt(0) // Aumentamos la memoria a 250 velas para la EMA 200
+        if (lista.size > 250) lista.removeAt(0)
     }
 
     private suspend fun descargarHistorialInicial(s: String) = withContext(Dispatchers.IO) {
         try {
-            // Bajamos 200 velas para que la EMA 200 funcione desde el primer minuto
             val url = "https://api.bitget.com/api/v2/mix/market/candles?symbol=$s&productType=USDT-FUTURES&granularity=$candleTimeframe&limit=200"
             val body = client.newCall(Request.Builder().url(url).build()).execute().body?.string()
             val data = JSONObject(body ?: "{}").getJSONArray("data")
             val precios = mutableListOf<Double>()
-            // Bitget devuelve de más nuevo a más viejo, hay que invertirlo
             for (i in data.length() - 1 downTo 0) {
                 precios.add(data.getJSONArray(i).getString(4).toDouble())
             }
             historialPreciosMap[s] = precios
-        } catch (e: Exception) {}
+            agregarLog("✅ $s: ${precios.size} velas cargadas")
+        } catch (e: Exception) {
+            agregarLog("⚠️ Error cargando $s: ${e.message}")
+        }
     }
 
     private suspend fun verificarIntegridadPosicion() {
@@ -353,7 +366,9 @@ class TradingService : Service() {
                     val data = json.optJSONArray("data")
                     if (data == null || data.length() == 0 || data.getJSONObject(0).optString("total", "0").toDouble() == 0.0) {
                         agregarLog("⚠️ La posición se cerró externamente.")
-                        posicionAbierta = false; monedaConPosicion = ""; maxPnLAlcanzado = 0.0
+                        posicionAbierta = false
+                        monedaConPosicion = ""
+                        maxPnLAlcanzado = 0.0
                         actualizarEstadoUI("Sincronizado")
                     }
                 }
@@ -397,11 +412,13 @@ class TradingService : Service() {
 
     private fun sincronizarAjustes() {
         val p = getSharedPreferences("BotConfig", Context.MODE_PRIVATE)
-        apiKey = p.getString("API_KEY", "") ?: ""; apiSecret = p.getString("SECRET_KEY", "") ?: ""; apiPassphrase = p.getString("API_PASSPHRASE", "") ?: ""
+        apiKey = p.getString("API_KEY", "") ?: ""
+        apiSecret = p.getString("SECRET_KEY", "") ?: ""
+        apiPassphrase = p.getString("API_PASSPHRASE", "") ?: ""
         leverage = p.getInt("LEVERAGE", 5).toDouble()
-        riskPercent = p.getString("RISK_PERCENT", "50.0")?.toDoubleOrNull() ?: 50.0
-        targetTP = p.getString("TP_VAL", "2.15")?.toDoubleOrNull() ?: 2.15
-        targetSL = p.getString("SL_VAL", "1.65")?.toDoubleOrNull() ?: 1.65
+        riskPercent = p.getString("RISK_PERCENT", "3.0")?.toDoubleOrNull() ?: 3.0
+        targetTP = p.getString("TP_VAL", "2.5")?.toDoubleOrNull() ?: 2.5
+        targetSL = p.getString("SL_VAL", "1.5")?.toDoubleOrNull() ?: 1.5
         activeStrategy = p.getString("STRATEGY", "AGRESIVA") ?: "AGRESIVA"
 
         val tfStr = p.getString("TIMEFRAME_VAL", "5m") ?: "5m"
@@ -413,7 +430,7 @@ class TradingService : Service() {
             "5m" -> 300_000L
             "15m" -> 900_000L
             "1h" -> 3_600_000L
-            else -> 60_000L
+            else -> 300_000L
         }
 
         activeSymbols.clear()
@@ -423,7 +440,6 @@ class TradingService : Service() {
         if (p.getBoolean("COIN_XRP", false)) activeSymbols.add("XRPUSDT")
         if (activeSymbols.isEmpty()) activeSymbols.add("BTCUSDT")
 
-        // Iniciar un Cerebro V5 independiente por cada moneda activa
         ultimateStrategies.clear()
         activeSymbols.forEach { symbol ->
             ultimateStrategies[symbol] = SignalFusionUltimateStrategy(candleTimeframe, activeStrategy)

@@ -11,7 +11,6 @@ import com.google.android.material.textfield.TextInputEditText
 
 class SettingsFragment : Fragment() {
 
-    // 1. Solo las vistas esenciales
     private lateinit var etApiKey: TextInputEditText
     private lateinit var etApiSecret: TextInputEditText
     private lateinit var etApiPassphrase: TextInputEditText
@@ -21,7 +20,6 @@ class SettingsFragment : Fragment() {
     private lateinit var sbLeverage: SeekBar
     private lateinit var tvLeverageLabel: TextView
     private lateinit var btnSave: Button
-
     private lateinit var rgStrategy: RadioGroup
     private lateinit var cbBTC: CheckBox
     private lateinit var cbETH: CheckBox
@@ -38,7 +36,6 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 2. Vincular vistas (Asegúrate de borrar del XML los que ya no usamos)
         etApiKey = view.findViewById(R.id.etApiKey)
         etApiSecret = view.findViewById(R.id.etApiSecret)
         try { etApiPassphrase = view.findViewById(R.id.etApiPassphrase) } catch (e: Exception) {}
@@ -60,15 +57,15 @@ class SettingsFragment : Fragment() {
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, timeframes)
         spinnerTimeframe.adapter = adapter
 
-        // 3. Cargar Datos Guardados
         val prefs = requireContext().getSharedPreferences("BotConfig", Context.MODE_PRIVATE)
         etApiKey.setText(prefs.getString("API_KEY", ""))
         etApiSecret.setText(prefs.getString("SECRET_KEY", ""))
         if (::etApiPassphrase.isInitialized) etApiPassphrase.setText(prefs.getString("API_PASSPHRASE", ""))
 
-        etRisk.setText(prefs.getString("RISK_PERCENT", "50.0"))
-        etTp.setText(prefs.getString("TP_VAL", "2.15"))
-        etSl.setText(prefs.getString("SL_VAL", "1.65"))
+        // 🔧 VALORES SEGUROS POR DEFECTO
+        etRisk.setText(prefs.getString("RISK_PERCENT", "3.0"))
+        etTp.setText(prefs.getString("TP_VAL", "2.5"))
+        etSl.setText(prefs.getString("SL_VAL", "1.5"))
 
         val lev = prefs.getInt("LEVERAGE", 5)
         sbLeverage.progress = lev
@@ -83,7 +80,6 @@ class SettingsFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        // 🔥 Cargar Estrategia Correctamente
         val estrategia = prefs.getString("STRATEGY", "AGRESIVA")
         when (estrategia) {
             "MODERADA" -> rgStrategy.check(R.id.rbModerada)
@@ -101,7 +97,6 @@ class SettingsFragment : Fragment() {
         val spinnerPosition = adapter.getPosition(savedTf)
         if (spinnerPosition >= 0) spinnerTimeframe.setSelection(spinnerPosition)
 
-        // 4. Botón Guardar
         btnSave.setOnClickListener {
             val editor = prefs.edit()
 
@@ -109,14 +104,22 @@ class SettingsFragment : Fragment() {
             editor.putString("SECRET_KEY", etApiSecret.text.toString().trim())
             if (::etApiPassphrase.isInitialized) editor.putString("API_PASSPHRASE", etApiPassphrase.text.toString().trim())
 
-            editor.putString("RISK_PERCENT", etRisk.text.toString())
+            // 🔧 VALIDACIÓN: Risk no puede ser mayor a 10%
+            val riskValue = etRisk.text.toString().toDoubleOrNull() ?: 3.0
+            val finalRisk = if (riskValue > 10.0) {
+                Toast.makeText(requireContext(), "⚠️ Risk limitado al 10% por seguridad", Toast.LENGTH_LONG).show()
+                "10.0"
+            } else {
+                riskValue.toString()
+            }
+            editor.putString("RISK_PERCENT", finalRisk)
+
             editor.putString("TP_VAL", etTp.text.toString())
             editor.putString("SL_VAL", etSl.text.toString())
 
             val currentLev = if (sbLeverage.progress < 1) 1 else sbLeverage.progress
             editor.putInt("LEVERAGE", currentLev)
 
-            // 🔥 Guardar Estrategia Seleccionada
             val selectedStrategy = when (rgStrategy.checkedRadioButtonId) {
                 R.id.rbModerada -> "MODERADA"
                 R.id.rbBreakout -> "BREAKOUT"
