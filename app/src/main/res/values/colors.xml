@@ -12,4 +12,7 @@
     <color name="cyber_bg_dark">#0A0E14</color> <color name="cyber_card_bg">#161B22</color>  <color name="neon_cyan">#00F0FF</color>      <color name="text_white">#FFFFFF</color>
     <color name="text_grey">#8B949E</color>
 
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+
 </resources>

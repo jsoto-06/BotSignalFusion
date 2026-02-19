@@ -9,13 +9,7 @@ import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.*
 
-// Modelo de datos limpio
-data class TradeData(
-    val symbol: String,
-    val side: String,
-    val pnl: Double,
-    val time: Long
-)
+// ❌ Se eliminó "data class TradeData" de aquí porque ya existe en TradeData.kt
 
 class HistoryAdapter(private val trades: List<TradeData>) : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
 
@@ -28,7 +22,6 @@ class HistoryAdapter(private val trades: List<TradeData>) : RecyclerView.Adapter
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        // Asegúrate de usar el layout nuevo que creamos arriba
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_history_trade, parent, false)
         return ViewHolder(view)
     }
@@ -38,11 +31,11 @@ class HistoryAdapter(private val trades: List<TradeData>) : RecyclerView.Adapter
 
         // 1. Datos básicos
         holder.tvSymbol.text = "${t.symbol} (${t.side})"
-        holder.tvTime.text = convertirHora(t.time)
+        holder.tvTime.text = convertirHora(t.timestamp) // 🔧 Cambiado a .timestamp para coincidir con el modelo
 
         // 2. Colores según PnL (Ganancia o Pérdida)
         val esProfit = t.pnl >= 0
-        val color = if (esProfit) Color.parseColor("#00E676") else Color.parseColor("#FF5252") // Verde o Rojo
+        val color = if (esProfit) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
 
         holder.tvPnlAmount.text = "${if(esProfit) "+" else ""}${"%.2f".format(t.pnl)} USDT"
         holder.tvPnlAmount.setTextColor(color)

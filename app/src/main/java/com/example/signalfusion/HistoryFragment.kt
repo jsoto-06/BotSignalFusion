@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -26,19 +27,31 @@ class HistoryFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // 1. Inicializar Vistas
         tvHistoryBalance = view.findViewById(R.id.tvHistoryBalance)
         rvHistory = view.findViewById(R.id.rvHistory)
+        val btnRefresh = view.findViewById<ImageButton>(R.id.btnRefreshHistory)
 
         rvHistory.layoutManager = LinearLayoutManager(context)
 
-        // Cargar saldo rápido desde caché
+        // 2. Cargar saldo rápido desde caché (Evitando el error del doble $$)
         val prefs = requireContext().getSharedPreferences("BotConfig", Context.MODE_PRIVATE)
-        val lastBalance = prefs.getString("LAST_KNOWN_BALANCE", "0.00") ?: "0.00"
+        val lastBalanceStr = prefs.getString("LAST_KNOWN_BALANCE", "0.00") ?: "0.00"
+        val lastBalanceNum = lastBalanceStr.toDoubleOrNull() ?: 0.0
+        tvHistoryBalance.text = "$${"%.2f".format(lastBalanceNum)}"
 
-        // 🔧 Corrección visual para evitar que salgan dos símbolos de dólar ($$21.47)
-        tvHistoryBalance.text = "$${"%.2f".format(lastBalance.toDoubleOrNull() ?: 0.0)}"
+        // 3. Configurar el Botón de Refrescar manual 🔄
+        btnRefresh.setOnClickListener {
+            // Animación de rotación para que sepa que está trabajando
+            it.animate().rotationBy(360f).setDuration(600).start()
 
-        // 🔥 DESCARGAR DATOS REALES DE BITGET
+            // Lanzamos la descarga de datos reales de Bitget
+            fetchBitgetHistory()
+
+            Toast.makeText(context, "Sincronizando con Bitget...", Toast.LENGTH_SHORT).show()
+        }
+
+        // 4. Carga inicial automática
         fetchBitgetHistory()
     }
 

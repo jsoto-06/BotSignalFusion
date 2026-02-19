@@ -39,8 +39,8 @@ class TradingService : Service() {
     private lateinit var manualCloseReceiver: BroadcastReceiver
     private var isReceiverRegistered = false
 
-    // 🔧 VALORES SEGUROS POR DEFECTO (Institucional)
-    private var targetTP = 2.5
+    // 🔧 VALORES SEGUROS POR DEFECTO (Corregido para ROE 2:1 real)
+    private var targetTP = 3.0
     private var targetSL = 1.5
     private var leverage = 5.0
     private var riskPercent = 3.0
@@ -51,8 +51,8 @@ class TradingService : Service() {
     // Variables internas
     private var lastCandleTime = 0L
     private var maxPnLAlcanzado = 0.0
-    private var tsActivation = 1.5
-    private var tsCallback = 0.5
+    private var tsActivation = 2.2 // ✅ Solo se activa si aseguramos un 2.2% de ganancia
+    private var tsCallback = 0.4   // ✅ Le da margen para respirar antes de cerrar
     private var initialBalance = 0.0
     private var maxDailyLoss = 10.0
     private var apiKey = ""
@@ -63,7 +63,7 @@ class TradingService : Service() {
     private val historialPreciosMap = mutableMapOf<String, MutableList<Double>>()
     private var ultimaOperacionTime = 0L
 
-    // 🔥 V5.0 - CEREBROS MÚLTIPLES (Uno por cada moneda)
+    // 🔥 V5.0 - CEREBROS MÚLTIPLES
     private val ultimateStrategies = mutableMapOf<String, SignalFusionUltimateStrategy>()
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -86,14 +86,21 @@ class TradingService : Service() {
                         actualizarEstadoUI("Limpiando UI...")
                     }
                 }
-                if (intent?.action == "SOLICITAR_REFRESH_UI") {
-                    actualizarEstadoUI("Sincronizado")
+                if (intent?.action == "SOLICITAR_REFRESH_UI" || intent?.action == "SOLICITAR_REFRESH_BALANCE") {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val nuevoBalance = obtenerBalanceBitget()
+                        if (nuevoBalance != null) {
+                            currentBalance = nuevoBalance
+                        }
+                        actualizarEstadoUI("Sincronizado")
+                    }
                 }
             }
         }
         val filter = IntentFilter().apply {
             addAction("FORZAR_CIERRE_MANUAL")
             addAction("SOLICITAR_REFRESH_UI")
+            addAction("SOLICITAR_REFRESH_BALANCE")
         }
         ContextCompat.registerReceiver(this, manualCloseReceiver, filter, ContextCompat.RECEIVER_EXPORTED)
         isReceiverRegistered = true
@@ -160,9 +167,9 @@ class TradingService : Service() {
         }
     }
 
-    // 🔥 V5.0 - EJECUCIÓN DEL MOTOR DE INFERENCIA
     private fun ejecutarEstrategiaUltimate(symbol: String, precio: Double, hP: List<Double>) {
-        if (System.currentTimeMillis() - ultimaOperacionTime < 60000) return
+        // ✅ CORRECCIÓN CRÍTICA: Cooldown de 15 minutos (900000 ms) para evitar OVERTRADING
+        if (System.currentTimeMillis() - ultimaOperacionTime < 900000) return
 
         val rsi = Indicadores.calcularRSI(hP, 14)
         val rsiMA = Indicadores.calcularRSIMA(hP, 14, 7)
@@ -173,7 +180,6 @@ class TradingService : Service() {
         lastRSI = "%.0f".format(rsi)
         actualizarEstadoUI("Analizando $symbol | RSI: $lastRSI | TF: $candleTimeframe")
 
-        // 🔧 High/Low realistas al 0.5% para detectar mejor la volatilidad
         val marketData = MarketData(
             price = precio,
             high = precio * 1.005,
@@ -215,7 +221,6 @@ class TradingService : Service() {
 
     private fun abrirTradeReal(symbol: String, precio: Double, tipo: String, hP: List<Double>) {
         CoroutineScope(Dispatchers.IO).launch {
-            // 🔥 FÓRMULA MATEMÁTICA CORRECTA PARA BITGET (Con Leverage)
             val margenDeseado = currentBalance * (riskPercent / 100.0)
             val sizeAmount = (margenDeseado * leverage) / precio
 
@@ -234,32 +239,15 @@ class TradingService : Service() {
                 return@launch
             }
 
-            // ATR Dinámico SL/TP
+            // ✅ CORRECCIÓN CRÍTICA: ATR DINÁMICO SEGURO
             val atr = Indicadores.calcularATR(hP, 14)
-            val baseSL = when(candleTimeframe) {
-                "1m", "5m" -> 1.4
-                "15m" -> 1.2
-                "1h" -> 0.9
-                else -> 1.1
-            }
-            val baseTP = when(candleTimeframe) {
-                "1m", "5m" -> 2.4
-                "15m" -> 2.0
-                "1h" -> 1.7
-                else -> 2.0
-            }
-
-            val slMult = if (activeStrategy == "AGRESIVA") baseSL * 0.85 else baseSL * 1.2
-            val tpMult = if (activeStrategy == "AGRESIVA") baseTP * 1.3 else baseTP * 0.9
-
-            val calcSLDist = atr * slMult
-            val calcTPDist = atr * tpMult
-
             val minSLDist = precio * (targetSL / 100.0 / leverage)
             val minTPDist = precio * (targetTP / 100.0 / leverage)
 
-            val finalSLDist = maxOf(calcSLDist, minSLDist)
-            val finalTPDist = maxOf(calcTPDist, minTPDist)
+            // minOf para SL (Cortar pérdidas estricto al targetSL)
+            // maxOf para TP (Dejar correr ganancias más allá del targetTP si hay volatilidad)
+            val finalSLDist = minOf(atr * 1.0, minSLDist)
+            val finalTPDist = maxOf(atr * 2.0, minTPDist)
 
             val slPrice = if (tipo == "LONG") precio - finalSLDist else precio + finalSLDist
             val tpPrice = if (tipo == "LONG") precio + finalTPDist else precio - finalTPDist
@@ -331,7 +319,16 @@ class TradingService : Service() {
         if (precioEntrada <= 0) return 0.0
         val diff = if (tipoPosicion == "LONG") actual - precioEntrada else precioEntrada - actual
         val bruto = (diff / precioEntrada) * 100 * leverage
-        return if (conFees) bruto - (0.12 * leverage) else bruto
+
+        // ✅ CORRECCIÓN CRÍTICA: Fees de Taker (0.06% x 2) + Slippage estimado
+        if (conFees) {
+            val feeRate = 0.06
+            val slippageRate = 0.15
+            val totalCost = (feeRate * 2) + slippageRate
+            val feeCost = totalCost * leverage
+            return bruto - feeCost
+        }
+        return bruto
     }
 
     private fun actualizarDatosVela(symbol: String, precio: Double) {
@@ -416,12 +413,21 @@ class TradingService : Service() {
         apiSecret = p.getString("SECRET_KEY", "") ?: ""
         apiPassphrase = p.getString("API_PASSPHRASE", "") ?: ""
         leverage = p.getInt("LEVERAGE", 5).toDouble()
-        riskPercent = p.getString("RISK_PERCENT", "3.0")?.toDoubleOrNull() ?: 3.0
-        targetTP = p.getString("TP_VAL", "2.5")?.toDoubleOrNull() ?: 2.5
-        targetSL = p.getString("SL_VAL", "1.5")?.toDoubleOrNull() ?: 1.5
-        activeStrategy = p.getString("STRATEGY", "AGRESIVA") ?: "AGRESIVA"
 
-        val tfStr = p.getString("TIMEFRAME_VAL", "5m") ?: "5m"
+        // Leemos el riesgo de la app (limitado a 10%)
+        riskPercent = p.getString("RISK_PERCENT", "3.0")?.toDoubleOrNull() ?: 3.0
+
+        // 🔥 EL BYPASS: Anulamos el límite del 10% de la UI solo si tu cuenta tiene menos de $50
+        if (currentBalance > 0 && currentBalance < 50.0) {
+            riskPercent = 35.0 // Forzamos 35% por debajo del capó para superar el mínimo de Bitget
+        }
+
+        // Leemos TP y SL de la app (Asegúrate de poner 3.0 en la app, o cambia el 2.5 de abajo por 3.0)
+        targetTP = p.getString("TP_VAL", "3.0")?.toDoubleOrNull() ?: 3.0
+        targetSL = p.getString("SL_VAL", "1.5")?.toDoubleOrNull() ?: 1.5
+        activeStrategy = p.getString("STRATEGY", "MODERADA") ?: "MODERADA" // Por defecto en Moderada
+
+        val tfStr = p.getString("TIMEFRAME_VAL", "15m") ?: "15m" // Por defecto en 15m
         candleTimeframe = tfStr
 
         candleIntervalMs = when(tfStr) {
@@ -438,6 +444,8 @@ class TradingService : Service() {
         if (p.getBoolean("COIN_ETH", false)) activeSymbols.add("ETHUSDT")
         if (p.getBoolean("COIN_SOL", false)) activeSymbols.add("SOLUSDT")
         if (p.getBoolean("COIN_XRP", false)) activeSymbols.add("XRPUSDT")
+
+        // Seguridad: Si desmarcas todas, siempre operará BTC
         if (activeSymbols.isEmpty()) activeSymbols.add("BTCUSDT")
 
         ultimateStrategies.clear()

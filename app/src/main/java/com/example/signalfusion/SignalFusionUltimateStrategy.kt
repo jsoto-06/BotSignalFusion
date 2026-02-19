@@ -107,6 +107,17 @@ class SignalFusionUltimateStrategy(
         val macdLineCrossedUnderSignal = (data.macdLine < data.macdSignal) && (data.macdHist < 0 && macdHistPrev >= 0)
 
         // ==========================================
+        // 📉 FILTRO DE TENDENCIA ESTRICTO (EMA Lenta)
+        // ==========================================
+        // ✅ Previene comprar en caídas fuertes y vender en subidas fuertes
+        if (data.price < data.emaSlow) {
+            longScore -= 2.0
+        }
+        if (data.price > data.emaSlow) {
+            shortScore -= 2.0
+        }
+
+        // ==========================================
         // 📈 SCORING PARA COMPRA (LONG)
         // ==========================================
 
@@ -163,13 +174,18 @@ class SignalFusionUltimateStrategy(
             else -> 3.0
         }
 
+        // ✅ CORRECCIÓN: Ajuste del modo MODERADO para que permita trades buenos
         val modeMultiplier = when(mode) {
-            "MODERADA" -> 1.3  // Exige más puntos para entrar (Más seguro)
-            "AGRESIVA" -> 0.75 // Exige menos puntos (Más entradas)
+            "MODERADA" -> 1.15  // Era 1.3
+            "AGRESIVA" -> 0.85  // Era 0.75
             else -> 1.0
         }
 
         val threshold = baseThreshold * modeMultiplier
+
+        // ✅ SESGO DEL MERCADO ACTUAL: Priorizamos posiciones en corto (SHORTS)
+        shortScore *= 1.2
+        longScore *= 0.9
 
         return SignalScore(longScore, shortScore, threshold, threshold)
     }
