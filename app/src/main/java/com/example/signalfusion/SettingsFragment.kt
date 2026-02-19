@@ -7,41 +7,28 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.*
 import androidx.fragment.app.Fragment
-import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.textfield.TextInputEditText
 
 class SettingsFragment : Fragment() {
 
-    // Vistas
+    // 1. Solo las vistas esenciales
     private lateinit var etApiKey: TextInputEditText
     private lateinit var etApiSecret: TextInputEditText
     private lateinit var etApiPassphrase: TextInputEditText
-
-    private lateinit var etAmount: TextInputEditText
     private lateinit var etRisk: TextInputEditText
     private lateinit var etTp: TextInputEditText
     private lateinit var etSl: TextInputEditText
     private lateinit var sbLeverage: SeekBar
     private lateinit var tvLeverageLabel: TextView
-    private lateinit var switchTurbo: Switch
     private lateinit var btnSave: Button
 
     private lateinit var rgStrategy: RadioGroup
-    private lateinit var rbModerada: RadioButton
-    private lateinit var rbAgresiva: RadioButton
-    private lateinit var rbBreakout: RadioButton
-
     private lateinit var cbBTC: CheckBox
     private lateinit var cbETH: CheckBox
     private lateinit var cbSOL: CheckBox
     private lateinit var cbXRP: CheckBox
-
     private lateinit var spinnerTimeframe: Spinner
-    private lateinit var etTrailingStop: TextInputEditText
-    private lateinit var etCircuitBreaker: TextInputEditText
-    private lateinit var switchPauseOnLoss: MaterialSwitch
 
-    // Array de opciones (debe coincidir con lo que espera el motor)
     private val timeframes = arrayOf("1m", "5m", "15m", "30m", "1h")
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -51,50 +38,34 @@ class SettingsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Vincular Vistas
+        // 2. Vincular vistas (Asegúrate de borrar del XML los que ya no usamos)
         etApiKey = view.findViewById(R.id.etApiKey)
         etApiSecret = view.findViewById(R.id.etApiSecret)
-
         try { etApiPassphrase = view.findViewById(R.id.etApiPassphrase) } catch (e: Exception) {}
 
-        etAmount = view.findViewById(R.id.etAmount)
         etRisk = view.findViewById(R.id.etRisk)
         etTp = view.findViewById(R.id.etTp)
         etSl = view.findViewById(R.id.etSl)
         sbLeverage = view.findViewById(R.id.sbLeverage)
         tvLeverageLabel = view.findViewById(R.id.tvLeverageLabel)
-        switchTurbo = view.findViewById(R.id.switchTurbo)
         btnSave = view.findViewById(R.id.btnSave)
 
         rgStrategy = view.findViewById(R.id.rgStrategy)
-        rbModerada = view.findViewById(R.id.rbModerada)
-        rbAgresiva = view.findViewById(R.id.rbAgresiva)
-        rbBreakout = view.findViewById(R.id.rbBreakout)
-
         cbBTC = view.findViewById(R.id.cbBTC)
         cbETH = view.findViewById(R.id.cbETH)
         cbSOL = view.findViewById(R.id.cbSOL)
         cbXRP = view.findViewById(R.id.cbXRP)
-
         spinnerTimeframe = view.findViewById(R.id.spinnerTimeframe)
-        etTrailingStop = view.findViewById(R.id.etTrailingStop)
-        etCircuitBreaker = view.findViewById(R.id.etCircuitBreaker)
-        switchPauseOnLoss = view.findViewById(R.id.switchPauseOnLoss)
 
-        // Configurar Spinner
         val adapter = ArrayAdapter(requireContext(), android.R.layout.simple_spinner_dropdown_item, timeframes)
         spinnerTimeframe.adapter = adapter
 
-        // 2. Cargar Datos Guardados
+        // 3. Cargar Datos Guardados
         val prefs = requireContext().getSharedPreferences("BotConfig", Context.MODE_PRIVATE)
         etApiKey.setText(prefs.getString("API_KEY", ""))
         etApiSecret.setText(prefs.getString("SECRET_KEY", ""))
+        if (::etApiPassphrase.isInitialized) etApiPassphrase.setText(prefs.getString("API_PASSPHRASE", ""))
 
-        if (::etApiPassphrase.isInitialized) {
-            etApiPassphrase.setText(prefs.getString("API_PASSPHRASE", ""))
-        }
-
-        etAmount.setText(prefs.getString("AMOUNT", "1000"))
         etRisk.setText(prefs.getString("RISK_PERCENT", "50.0"))
         etTp.setText(prefs.getString("TP_VAL", "2.15"))
         etSl.setText(prefs.getString("SL_VAL", "1.65"))
@@ -112,13 +83,13 @@ class SettingsFragment : Fragment() {
             override fun onStopTrackingTouch(seekBar: SeekBar?) {}
         })
 
-        switchTurbo.isChecked = prefs.getBoolean("TURBO_MODE", false)
-
+        // 🔥 Cargar Estrategia Correctamente
         val estrategia = prefs.getString("STRATEGY", "AGRESIVA")
         when (estrategia) {
-            "MODERADA" -> rbModerada.isChecked = true
-            "BREAKOUT" -> rbBreakout.isChecked = true
-            "AGRESIVA" -> rbAgresiva.isChecked = true
+            "MODERADA" -> rgStrategy.check(R.id.rbModerada)
+            "BREAKOUT" -> rgStrategy.check(R.id.rbBreakout)
+            "AGRESIVA" -> rgStrategy.check(R.id.rbAgresiva)
+            else -> rgStrategy.check(R.id.rbAgresiva)
         }
 
         cbBTC.isChecked = prefs.getBoolean("COIN_BTC", true)
@@ -126,40 +97,31 @@ class SettingsFragment : Fragment() {
         cbSOL.isChecked = prefs.getBoolean("COIN_SOL", false)
         cbXRP.isChecked = prefs.getBoolean("COIN_XRP", false)
 
-        // 🔥 CORRECCIÓN: Leer con "TIMEFRAME_VAL"
-        val savedTf = prefs.getString("TIMEFRAME_VAL", "1m")
+        val savedTf = prefs.getString("TIMEFRAME_VAL", "5m")
         val spinnerPosition = adapter.getPosition(savedTf)
         if (spinnerPosition >= 0) spinnerTimeframe.setSelection(spinnerPosition)
 
-        etTrailingStop.setText(prefs.getFloat("TS_ACTIV", 1.3f).toString())
-        etCircuitBreaker.setText(prefs.getFloat("MAX_DAILY_LOSS", 10.0f).toString())
-        switchPauseOnLoss.isChecked = prefs.getBoolean("PAUSE_ON_LOSS", true)
-
-        // 3. Botón Guardar
+        // 4. Botón Guardar
         btnSave.setOnClickListener {
             val editor = prefs.edit()
 
             editor.putString("API_KEY", etApiKey.text.toString().trim())
             editor.putString("SECRET_KEY", etApiSecret.text.toString().trim())
+            if (::etApiPassphrase.isInitialized) editor.putString("API_PASSPHRASE", etApiPassphrase.text.toString().trim())
 
-            if (::etApiPassphrase.isInitialized) {
-                editor.putString("API_PASSPHRASE", etApiPassphrase.text.toString().trim())
-            }
-
-            editor.putString("AMOUNT", etAmount.text.toString())
             editor.putString("RISK_PERCENT", etRisk.text.toString())
             editor.putString("TP_VAL", etTp.text.toString())
             editor.putString("SL_VAL", etSl.text.toString())
 
             val currentLev = if (sbLeverage.progress < 1) 1 else sbLeverage.progress
             editor.putInt("LEVERAGE", currentLev)
-            editor.putBoolean("TURBO_MODE", switchTurbo.isChecked)
 
+            // 🔥 Guardar Estrategia Seleccionada
             val selectedStrategy = when (rgStrategy.checkedRadioButtonId) {
                 R.id.rbModerada -> "MODERADA"
                 R.id.rbBreakout -> "BREAKOUT"
                 R.id.rbAgresiva -> "AGRESIVA"
-                else -> "MODERADA"
+                else -> "AGRESIVA"
             }
             editor.putString("STRATEGY", selectedStrategy)
 
@@ -168,20 +130,10 @@ class SettingsFragment : Fragment() {
             editor.putBoolean("COIN_SOL", cbSOL.isChecked)
             editor.putBoolean("COIN_XRP", cbXRP.isChecked)
 
-            // 🔥 CORRECCIÓN: Guardar como "TIMEFRAME_VAL"
             editor.putString("TIMEFRAME_VAL", spinnerTimeframe.selectedItem.toString())
 
-            val tsVal = etTrailingStop.text.toString().toFloatOrNull() ?: 1.3f
-            editor.putFloat("TS_ACTIV", tsVal)
-
-            val cbVal = etCircuitBreaker.text.toString().toFloatOrNull() ?: 10.0f
-            editor.putFloat("MAX_DAILY_LOSS", cbVal)
-
-            editor.putBoolean("PAUSE_ON_LOSS", switchPauseOnLoss.isChecked)
-
             editor.apply()
-
-            Toast.makeText(requireContext(), "✅ Guardado. REINICIA el Motor.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), "✅ Configuración Guardada", Toast.LENGTH_SHORT).show()
         }
     }
 }

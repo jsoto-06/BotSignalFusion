@@ -111,7 +111,7 @@
                     android:id="@+id/rbModerada"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="🟢 MODERADA (Balanceada)"
+                    android:text="🟢 MODERADA (Segura)"
                     android:textColor="@color/text_primary"
                     android:buttonTint="@color/neon_green"
                     android:checked="true"/>
@@ -128,7 +128,7 @@
                     android:id="@+id/rbBreakout"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="🔵 BREAKOUT (Francotirador)"
+                    android:text="🔵 BREAKOUT (Tendencia)"
                     android:textColor="@color/text_primary"
                     android:buttonTint="@color/neon_blue"/>
             </RadioGroup>
@@ -200,46 +200,22 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"/>
 
-        <LinearLayout
+        <com.google.android.material.textfield.TextInputLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:hint="Riesgo por Operación (%)"
+            app:boxBackgroundColor="@color/bg_input"
+            app:boxStrokeWidth="0dp"
             android:layout_marginBottom="12dp">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
-                android:layout_weight="1"
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/etRisk"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Capital ($)"
-                app:boxBackgroundColor="@color/bg_input"
-                app:boxStrokeWidth="0dp"
-                android:layout_marginEnd="8dp">
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etAmount"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="numberDecimal"
-                    android:text="500"
-                    android:textColor="@color/text_primary"/>
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:hint="Riesgo/Op (%)"
-                app:boxBackgroundColor="@color/bg_input"
-                app:boxStrokeWidth="0dp">
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etRisk"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="numberDecimal"
-                    android:text="5.0"
-                    android:textColor="@color/neon_gold"
-                    android:textStyle="bold"/>
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
+                android:inputType="numberDecimal"
+                android:text="50.0"
+                android:textColor="@color/neon_gold"
+                android:textStyle="bold"/>
+        </com.google.android.material.textfield.TextInputLayout>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -251,7 +227,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:hint="TP %"
+                android:hint="TP Mínimo %"
                 app:boxBackgroundColor="@color/bg_input"
                 app:boxStrokeWidth="0dp"
                 android:layout_marginEnd="8dp">
@@ -268,7 +244,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="wrap_content"
-                android:hint="SL %"
+                android:hint="SL Mínimo %"
                 app:boxBackgroundColor="@color/bg_input"
                 app:boxStrokeWidth="0dp">
                 <com.google.android.material.textfield.TextInputEditText
@@ -325,140 +301,21 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginEnd="8dp">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Temporalidad"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="12sp"
-                    android:layout_marginBottom="4dp"/>
-                <Spinner
-                    android:id="@+id/spinnerTimeframe"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:backgroundTint="@color/text_primary"/>
-            </LinearLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:hint="Trailing Stop %"
-                app:boxBackgroundColor="@color/bg_input"
-                app:boxStrokeWidth="0dp">
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etTrailingStop"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="numberDecimal"
-                    android:text="1.3"
-                    android:textColor="@color/text_primary"/>
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Circuit Breaker (Max Pérdida Diaria %)"
-            app:boxBackgroundColor="@color/bg_input"
-            app:boxStrokeWidth="0dp"
-            android:layout_marginBottom="16dp">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etCircuitBreaker"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="numberDecimal"
-                android:text="10.0"
-                android:textColor="@color/neon_red"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/bg_card"
-            app:cardCornerRadius="12dp"
-            app:strokeWidth="0dp"
+            android:orientation="vertical"
             android:layout_marginBottom="24dp">
-            <LinearLayout
-                android:layout_width="match_parent"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp"
-                android:gravity="center_vertical">
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <TextView
-                        android:text="ESCUDO ANTI-RACHAS 🛡️"
-                        android:textColor="@color/neon_gold"
-                        android:textStyle="bold"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-                    <TextView
-                        android:text="Pausa 1h tras 5 pérdidas seguidas"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-                </LinearLayout>
-
-                <com.google.android.material.materialswitch.MaterialSwitch
-                    android:id="@+id/switchPauseOnLoss"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checked="true"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/bg_card"
-            app:cardCornerRadius="12dp"
-            app:strokeColor="@color/neon_gold"
-            app:strokeWidth="1dp"
-            android:layout_marginBottom="32dp">
-            <LinearLayout
+                android:text="Temporalidad de Velas"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:layout_marginBottom="4dp"/>
+            <Spinner
+                android:id="@+id/spinnerTimeframe"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:padding="16dp"
-                android:gravity="center_vertical">
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_weight="1"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-                    <TextView
-                        android:text="MODO TURBO ⚡"
-                        android:textColor="@color/neon_gold"
-                        android:textStyle="bold"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-                    <TextView
-                        android:text="Entradas más rápidas (Más riesgo)"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="11sp"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"/>
-                </LinearLayout>
-
-                <Switch
-                    android:id="@+id/switchTurbo"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"/>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                android:layout_height="48dp"
+                android:backgroundTint="@color/text_primary"/>
+        </LinearLayout>
 
         <Button
             android:id="@+id/btnSave"
