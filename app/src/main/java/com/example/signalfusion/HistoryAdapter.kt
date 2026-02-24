@@ -9,8 +9,6 @@ import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.*
 
-// ❌ Se eliminó "data class TradeData" de aquí porque ya existe en TradeData.kt
-
 class HistoryAdapter(private val trades: List<TradeData>) : RecyclerView.Adapter<HistoryAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -31,11 +29,11 @@ class HistoryAdapter(private val trades: List<TradeData>) : RecyclerView.Adapter
 
         // 1. Datos básicos
         holder.tvSymbol.text = "${t.symbol} (${t.side})"
-        holder.tvTime.text = convertirHora(t.timestamp) // 🔧 Cambiado a .timestamp para coincidir con el modelo
+        holder.tvTime.text = convertirHora(t.time)
 
-        // 2. Colores según PnL (Ganancia o Pérdida)
+        // 2. Colores según PnL
         val esProfit = t.pnl >= 0
-        val color = if (esProfit) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
+        val color = if (esProfit) Color.parseColor("#00E676") else Color.parseColor("#FF5252") // Verde o Rojo
 
         holder.tvPnlAmount.text = "${if(esProfit) "+" else ""}${"%.2f".format(t.pnl)} USDT"
         holder.tvPnlAmount.setTextColor(color)
