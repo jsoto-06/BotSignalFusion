@@ -15,7 +15,8 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
-import com.google.android.material.materialswitch.MaterialSwitch
+// IMPORTANTE: Cambiado de MaterialSwitch a SwitchCompat
+import androidx.appcompat.widget.SwitchCompat
 
 class BotFragment : Fragment() {
 
@@ -24,7 +25,8 @@ class BotFragment : Fragment() {
     private lateinit var txtRSI: TextView
     private lateinit var txtTendencia: TextView
     private lateinit var txtEstadoDetalle: TextView
-    private lateinit var switchBotActive: MaterialSwitch
+    // IMPORTANTE: Variable actualizada
+    private lateinit var switchBotActive: SwitchCompat
     private lateinit var chipStatus: Chip
 
     private lateinit var cardActiveTrade: MaterialCardView
@@ -32,6 +34,10 @@ class BotFragment : Fragment() {
     private lateinit var tvTradeType: TextView
     private lateinit var tvTradePnL: TextView
     private lateinit var btnCloseTrade: Button
+
+    // Variables para el nuevo diseño (WinRate y PnL Diario)
+    private lateinit var tvWinRate: TextView
+    private lateinit var tvDailyPnL: TextView
 
     private val tradingReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -66,6 +72,10 @@ class BotFragment : Fragment() {
         txtEstadoDetalle = view.findViewById(R.id.txtEstadoDetalle)
         switchBotActive = view.findViewById(R.id.switchBotActive)
         chipStatus = view.findViewById(R.id.chipStatus)
+
+        // Nuevos campos
+        tvWinRate = view.findViewById(R.id.tvWinRate)
+        tvDailyPnL = view.findViewById(R.id.tvDailyPnL)
 
         cardActiveTrade = view.findViewById(R.id.cardActiveTrade)
         tvTradeSymbol = view.findViewById(R.id.tvTradeSymbol)

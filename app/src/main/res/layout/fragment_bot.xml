@@ -36,6 +36,7 @@
         app:chipBackgroundColor="@color/cyber_card_bg"
         app:chipStrokeColor="@color/neon_green"
         app:chipStrokeWidth="1dp" />
+
     <TextView
         android:id="@+id/tvSaludBot"
         android:layout_width="wrap_content"
@@ -91,14 +92,18 @@
                     android:textColor="@color/neon_green"
                     android:textSize="11sp" />
             </LinearLayout>
-            <com.google.android.material.materialswitch.MaterialSwitch
+
+            <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/switchBotActive"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
+                android:text=""
+                app:showText="false"
                 app:thumbTint="@color/white"
                 app:trackTint="@color/neon_green" />
+
         </RelativeLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -117,6 +122,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="20dp">
+
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -132,19 +138,74 @@
                 android:text="$1,000.00"
                 android:textColor="@color/neon_green"
                 android:textSize="42sp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="5dp">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="WIN RATE (24H)"
+                        android:textColor="@color/text_grey"
+                        android:textSize="10sp"
+                        android:textStyle="bold"/>
+                    <TextView
+                        android:id="@+id/tvWinRate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--%"
+                        android:textColor="@color/neon_gold"
+                        android:textSize="18sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical"
+                    android:gravity="end">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="PnL DIARIO"
+                        android:textColor="@color/text_grey"
+                        android:textSize="10sp"
+                        android:textStyle="bold"/>
+                    <TextView
+                        android:id="@+id/tvDailyPnL"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="$0.00"
+                        android:textColor="@color/white"
+                        android:textSize="18sp"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+            </LinearLayout>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:background="#22FFFFFF"
                 android:layout_marginVertical="10dp" />
+
             <TextView
                 android:id="@+id/tvLivePrice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="$66,870.20"
-                android:textColor="@color/neon_gold"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+                android:text="BTC: $00,000.00"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:alpha="0.8" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -179,7 +240,7 @@
                     android:id="@+id/txtRSI"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="47"
+                    android:text="--"
                     android:textColor="@color/neon_gold"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -202,14 +263,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="TREND"
+                    android:text="TENDENCIA"
                     android:textColor="@color/text_grey"
                     android:textSize="9sp" />
                 <TextView
                     android:id="@+id/txtTendencia"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="LONG ↗"
+                    android:text="--"
                     android:textColor="@color/neon_green"
                     android:textSize="16sp"
                     android:textStyle="bold" />
@@ -231,14 +292,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="VOLATIL"
+                    android:text="ATR"
                     android:textColor="@color/text_grey"
                     android:textSize="9sp" />
                 <TextView
                     android:id="@+id/txtVolatilidad"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="05%"
+                    android:text="--"
                     android:textColor="@color/neon_cyan"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -380,5 +441,7 @@
             android:fontFamily="monospace"
             android:textSize="12sp" />
     </LinearLayout>
+
+
 
 </RelativeLayout>

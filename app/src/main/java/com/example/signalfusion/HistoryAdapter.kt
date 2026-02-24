@@ -20,6 +20,7 @@ class HistoryAdapter(private val trades: List<TradeData>) : RecyclerView.Adapter
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        // Asegúrate de que tu archivo XML se llame 'item_history_trade.xml'
         val view = LayoutInflater.from(parent.context).inflate(R.layout.item_history_trade, parent, false)
         return ViewHolder(view)
     }
@@ -31,10 +32,13 @@ class HistoryAdapter(private val trades: List<TradeData>) : RecyclerView.Adapter
         holder.tvSymbol.text = "${t.symbol} (${t.side})"
         holder.tvTime.text = convertirHora(t.time)
 
-        // 2. Colores según PnL
+        // 2. Lógica de Colores y Signos
         val esProfit = t.pnl >= 0
-        val color = if (esProfit) Color.parseColor("#00E676") else Color.parseColor("#FF5252") // Verde o Rojo
 
+        // Verde Neon (#00E676) o Rojo Neon (#FF5252)
+        val color = if (esProfit) Color.parseColor("#00E676") else Color.parseColor("#FF5252")
+
+        // Formato de dinero: +$10.50 o -$5.20
         holder.tvPnlAmount.text = "${if(esProfit) "+" else ""}${"%.2f".format(t.pnl)} USDT"
         holder.tvPnlAmount.setTextColor(color)
 
@@ -50,3 +54,4 @@ class HistoryAdapter(private val trades: List<TradeData>) : RecyclerView.Adapter
         return SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(ms))
     }
 }
+

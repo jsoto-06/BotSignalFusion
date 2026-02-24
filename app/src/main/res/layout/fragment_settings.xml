@@ -317,6 +317,83 @@
                 android:backgroundTint="@color/text_primary"/>
         </LinearLayout>
 
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardTelegram"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@id/cardActiveTrade"
+            android:layout_marginTop="16dp"
+            app:cardBackgroundColor="@color/cyber_card_bg"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="#33FFFFFF"
+            app:strokeWidth="1dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="10dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="ALERTAS TELEGRAM"
+                        android:textColor="@color/neon_blue"
+                        android:textStyle="bold" />
+
+                    <androidx.appcompat.widget.SwitchCompat
+                        android:id="@+id/switchTelegram"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text=""
+                        app:showText="false"
+                        app:thumbTint="@color/white"
+                        app:trackTint="@color/neon_blue" />
+                </LinearLayout>
+
+                <EditText
+                    android:id="@+id/etTelegramToken"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#2A2A35"
+                    android:hint="Pega aquí tu Bot Token"
+                    android:textColorHint="#555"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:padding="10dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <EditText
+                    android:id="@+id/etTelegramChatId"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="#2A2A35"
+                    android:hint="Pega aquí tu Chat ID"
+                    android:textColorHint="#555"
+                    android:textColor="@color/white"
+                    android:textSize="12sp"
+                    android:padding="10dp"
+                    android:layout_marginBottom="8dp"/>
+
+                <Button
+                    android:id="@+id/btnSaveTelegram"
+                    android:layout_width="match_parent"
+                    android:layout_height="40dp"
+                    android:text="GUARDAR CONFIGURACIÓN"
+                    android:textSize="10sp"
+                    app:backgroundTint="@color/neon_blue"/>
+
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
         <Button
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
@@ -327,6 +404,7 @@
             android:textStyle="bold"
             android:textSize="16sp"
             app:cornerRadius="12dp"/>
+
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>
