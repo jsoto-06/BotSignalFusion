@@ -11,6 +11,8 @@ import okhttp3.Request
 import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.*
+import kotlin.math.max
+import kotlin.math.min
 
 class TradingService : Service() {
 
@@ -39,20 +41,20 @@ class TradingService : Service() {
     private lateinit var manualCloseReceiver: BroadcastReceiver
     private var isReceiverRegistered = false
 
-    // 🔧 VALORES SEGUROS POR DEFECTO (Corregido para ROE 2:1 real)
+    // 🔧 VALORES SEGUROS POR DEFECTO
     private var targetTP = 3.0
-    private var targetSL = 1.5
-    private var leverage = 5.0
+    private var targetSL = 5.0 // SL Base amplio (5%)
+    private var leverage = 10.0 // Valor inicial (se sobrescribe con tu ajuste)
     private var riskPercent = 3.0
-    private var activeStrategy = "AGRESIVA"
-    private var candleTimeframe = "5m"
-    private var candleIntervalMs = 300_000L
+    private var activeStrategy = "MODERADA"
+    private var candleTimeframe = "15m"
+    private var candleIntervalMs = 900_000L
 
     // Variables internas
     private var lastCandleTime = 0L
     private var maxPnLAlcanzado = 0.0
-    private var tsActivation = 2.2 // ✅ Solo se activa si aseguramos un 2.2% de ganancia
-    private var tsCallback = 0.4   // ✅ Le da margen para respirar antes de cerrar
+    private var tsActivation = 2.2
+    private var tsCallback = 0.4
     private var initialBalance = 0.0
     private var maxDailyLoss = 10.0
     private var apiKey = ""
@@ -61,9 +63,12 @@ class TradingService : Service() {
     private var activeSymbols = mutableListOf<String>()
     private var currentSymbolIndex = 0
     private val historialPreciosMap = mutableMapOf<String, MutableList<Double>>()
-    private var ultimaOperacionTime = 0L
 
-    // 🔥 V5.0 - CEREBROS MÚLTIPLES
+    // Cooldown
+    private var ultimaOperacionTime = 0L
+    private var consecutiveLosses = 0
+    private val baseCooldown = 900_000L // 15 minutos
+
     private val ultimateStrategies = mutableMapOf<String, SignalFusionUltimateStrategy>()
 
     override fun onBind(intent: Intent?): IBinder? = null
@@ -114,8 +119,7 @@ class TradingService : Service() {
                 currentBalance = saldo
                 if (initialBalance == 0.0) initialBalance = currentBalance
                 isRunning = true
-                agregarLog("✅ MOTOR V5.0 ULTIMATE | TF: $candleTimeframe | Modo: $activeStrategy")
-                agregarLog("💰 Balance: $${"%.2f".format(currentBalance)} | Risk: ${"%.1f".format(riskPercent)}% | Lev: ${leverage.toInt()}x")
+                agregarLog("✅ MOTOR V5.2 | TF: $candleTimeframe | Lev: ${leverage.toInt()}x")
                 iniciarCicloTrading()
             } else {
                 agregarLog("❌ ERROR: Revisa API Keys")
@@ -151,7 +155,6 @@ class TradingService : Service() {
 
                         val hP = historialPreciosMap[symbol] ?: mutableListOf()
 
-                        // Necesitamos más de 200 velas (por la EMA 200) o un mínimo de 50 para operar
                         if (hP.size >= 50) {
                             if (!posicionAbierta) ejecutarEstrategiaUltimate(symbol, precio, hP)
                             else gestionarSalida(symbol, precio)
@@ -168,8 +171,29 @@ class TradingService : Service() {
     }
 
     private fun ejecutarEstrategiaUltimate(symbol: String, precio: Double, hP: List<Double>) {
-        // ✅ CORRECCIÓN CRÍTICA: Cooldown de 15 minutos (900000 ms) para evitar OVERTRADING
-        if (System.currentTimeMillis() - ultimaOperacionTime < 900000) return
+        if (System.currentTimeMillis() < ultimaOperacionTime) {
+            val tiempoRestante = (ultimaOperacionTime - System.currentTimeMillis()) / 1000
+            actualizarEstadoUI("⏳ Cooldown: ${tiempoRestante}s")
+            return
+        }
+
+        val atr = Indicadores.calcularATR(hP, 14)
+        val atrPercent = (atr / precio) * 100
+
+        // Filtro ATR 0.8%
+        if (atrPercent < 0.8) {
+            actualizarEstadoUI("⏸️ ATR Bajo (${"%.2f".format(atrPercent)}%), esperando...")
+            return
+        }
+
+        // Detector Lateral
+        if (hP.size >= 20) {
+            val atr5ago = Indicadores.calcularATR(hP.dropLast(5), 14)
+            if (atr < atr5ago * 0.8) {
+                actualizarEstadoUI("📊 Mercado lateralizando...")
+                return
+            }
+        }
 
         val rsi = Indicadores.calcularRSI(hP, 14)
         val rsiMA = Indicadores.calcularRSIMA(hP, 14, 7)
@@ -178,50 +202,37 @@ class TradingService : Service() {
         val macd = Indicadores.calcularMACD(hP)
 
         lastRSI = "%.0f".format(rsi)
-        actualizarEstadoUI("Analizando $symbol | RSI: $lastRSI | TF: $candleTimeframe")
+        actualizarEstadoUI("Analizando $symbol | RSI: $lastRSI")
 
-        val marketData = MarketData(
-            price = precio,
-            high = precio * 1.005,
-            low = precio * 0.995,
-            rsi = rsi,
-            rsiMA = rsiMA,
-            emaFast = emas.fast,
-            emaSlow = emas.slow,
-            emaMid = emas.mid,
-            emaTrend = emas.trend,
-            bbUpper = bb.first,
-            bbMiddle = bb.second,
-            bbLower = bb.third,
-            macdLine = macd.first,
-            macdSignal = macd.second,
-            macdHist = macd.third
-        )
-
+        val marketData = MarketData(precio, precio*1.005, precio*0.995, rsi, rsiMA, emas.fast, emas.slow, emas.mid, emas.trend, bb.first, bb.second, bb.third, macd.first, macd.second, macd.third)
         val cerebro = ultimateStrategies[symbol] ?: return
         val senialFinal = cerebro.evaluate(marketData)
 
-        if (senialFinal == "LONG") {
-            abrirTradeReal(symbol, precio, "LONG", hP)
-        } else if (senialFinal == "SHORT") {
-            abrirTradeReal(symbol, precio, "SHORT", hP)
-        }
+        if (senialFinal == "LONG") abrirTradeReal(symbol, precio, "LONG", hP)
+        else if (senialFinal == "SHORT") abrirTradeReal(symbol, precio, "SHORT", hP)
     }
 
     private fun gestionarSalida(symbol: String, precio: Double) {
         val pnlNeto = calcularPnL(precio, true)
         if (pnlNeto > maxPnLAlcanzado) maxPnLAlcanzado = pnlNeto
-
         actualizarEstadoUI("Operando: ${"%.2f".format(pnlNeto)}%")
-
         if (maxPnLAlcanzado >= tsActivation && (maxPnLAlcanzado - pnlNeto) >= tsCallback) {
-            cerrarTradeReal("Trailing Stop 🛡️ (desde ${"%.2f".format(maxPnLAlcanzado)}%)")
+            cerrarTradeReal("Trailing Stop 🛡️")
         }
     }
 
     private fun abrirTradeReal(symbol: String, precio: Double, tipo: String, hP: List<Double>) {
         CoroutineScope(Dispatchers.IO).launch {
-            val margenDeseado = currentBalance * (riskPercent / 100.0)
+            // Bypass Seguro: Max 40% de cuenta o $6 si es cuenta pequeña
+            val margenDeseado = if (currentBalance < 50.0) {
+                min(currentBalance * 0.40, 6.0)
+            } else {
+                currentBalance * (riskPercent / 100.0)
+            }
+
+            // ✅ USAMOS TU LEVERAGE SELECCIONADO:
+            // Bitget necesita el tamaño total de la posición (Margen * Leverage).
+            // Si en la App pones 10x y en Bitget tienes 10x, todo cuadra perfecto.
             val sizeAmount = (margenDeseado * leverage) / precio
 
             var precisionSize = 1
@@ -234,20 +245,15 @@ class TradingService : Service() {
             val sizeStr = String.format(Locale.US, "%.${precisionSize}f", sizeAmount)
             val sizeFinal = sizeStr.toDouble()
 
-            if (sizeFinal <= 0.0) {
-                agregarLog("⚠️ Size calculado = 0. Operación cancelada.")
-                return@launch
-            }
+            if (sizeFinal <= 0.0) return@launch
 
-            // ✅ CORRECCIÓN CRÍTICA: ATR DINÁMICO SEGURO
+            // ✅ SL INTELIGENTE basado en ATR y Leverage seleccionado
             val atr = Indicadores.calcularATR(hP, 14)
             val minSLDist = precio * (targetSL / 100.0 / leverage)
             val minTPDist = precio * (targetTP / 100.0 / leverage)
 
-            // minOf para SL (Cortar pérdidas estricto al targetSL)
-            // maxOf para TP (Dejar correr ganancias más allá del targetTP si hay volatilidad)
-            val finalSLDist = minOf(atr * 1.0, minSLDist)
-            val finalTPDist = maxOf(atr * 2.0, minTPDist)
+            val finalSLDist = max(atr * 2.0, minSLDist)
+            val finalTPDist = max(atr * 4.0, minTPDist)
 
             val slPrice = if (tipo == "LONG") precio - finalSLDist else precio + finalSLDist
             val tpPrice = if (tipo == "LONG") precio + finalTPDist else precio - finalTPDist
@@ -255,8 +261,7 @@ class TradingService : Service() {
             val slStr = String.format(Locale.US, "%.${precisionPrice}f", slPrice)
             val tpStr = String.format(Locale.US, "%.${precisionPrice}f", tpPrice)
 
-            agregarLog("🎯 SEÑAL $tipo ($symbol) | Score Aprobado")
-            agregarLog("💼 Size: $sizeStr | SL: $slStr | TP: $tpStr")
+            agregarLog("🎯 SEÑAL $tipo ($symbol)")
 
             val json = JSONObject()
             json.put("symbol", symbol)
@@ -278,9 +283,9 @@ class TradingService : Service() {
                 tipoPosicion = tipo
                 precioEntrada = precio
                 maxPnLAlcanzado = -0.2
-                ultimaOperacionTime = System.currentTimeMillis()
-
-                agregarLog("✅ EJECUTADO: $tipo $symbol @ $${"%.2f".format(precio)}")
+                // Cooldown 15 min base
+                ultimaOperacionTime = System.currentTimeMillis() + baseCooldown
+                agregarLog("✅ EJECUTADO: $tipo $symbol")
                 actualizarEstadoUI("🚀 POSICIÓN ACTIVA")
                 enviarAlertaPush("NUEVA POSICIÓN 🚀", "$tipo $symbol", false)
             } else {
@@ -302,6 +307,19 @@ class TradingService : Service() {
 
             if (resp != null && (resp.contains("00000") || resp.contains("success"))) {
                 val pnlFinal = calcularPnL(lastPrice.toDoubleOrNull() ?: precioEntrada, true)
+
+                // Cooldown Adaptativo
+                if (pnlFinal < 0) {
+                    consecutiveLosses++
+                    val multiplier = 1.0 + (consecutiveLosses * 0.5)
+                    val adaptiveCooldown = (baseCooldown * multiplier).toLong()
+                    ultimaOperacionTime = System.currentTimeMillis() + adaptiveCooldown
+                    agregarLog("⚠️ Pérdida #$consecutiveLosses. Pausa de ${adaptiveCooldown/60000} min.")
+                } else {
+                    consecutiveLosses = 0
+                    ultimaOperacionTime = System.currentTimeMillis() + baseCooldown
+                }
+
                 posicionAbierta = false
                 monedaConPosicion = ""
                 maxPnLAlcanzado = 0.0
@@ -320,7 +338,6 @@ class TradingService : Service() {
         val diff = if (tipoPosicion == "LONG") actual - precioEntrada else precioEntrada - actual
         val bruto = (diff / precioEntrada) * 100 * leverage
 
-        // ✅ CORRECCIÓN CRÍTICA: Fees de Taker (0.06% x 2) + Slippage estimado
         if (conFees) {
             val feeRate = 0.06
             val slippageRate = 0.15
@@ -412,40 +429,28 @@ class TradingService : Service() {
         apiKey = p.getString("API_KEY", "") ?: ""
         apiSecret = p.getString("SECRET_KEY", "") ?: ""
         apiPassphrase = p.getString("API_PASSPHRASE", "") ?: ""
-        leverage = p.getInt("LEVERAGE", 5).toDouble()
 
-        // Leemos el riesgo de la app (limitado a 10%)
+        // ✅ CORRECCIÓN FINAL: Lee tu leverage de la App, no lo fija a 10
+        leverage = p.getInt("LEVERAGE", 10).toDouble()
+
+        // Leemos el riesgo de la app
         riskPercent = p.getString("RISK_PERCENT", "3.0")?.toDoubleOrNull() ?: 3.0
 
-        // 🔥 EL BYPASS: Anulamos el límite del 10% de la UI solo si tu cuenta tiene menos de $50
-        if (currentBalance > 0 && currentBalance < 50.0) {
-            riskPercent = 35.0 // Forzamos 35% por debajo del capó para superar el mínimo de Bitget
-        }
+        // Bypass: Si hay poco saldo, la lógica en abrirTradeReal maneja el monto seguro.
 
-        // Leemos TP y SL de la app (Asegúrate de poner 3.0 en la app, o cambia el 2.5 de abajo por 3.0)
         targetTP = p.getString("TP_VAL", "3.0")?.toDoubleOrNull() ?: 3.0
-        targetSL = p.getString("SL_VAL", "1.5")?.toDoubleOrNull() ?: 1.5
-        activeStrategy = p.getString("STRATEGY", "MODERADA") ?: "MODERADA" // Por defecto en Moderada
+        targetSL = p.getString("SL_VAL", "5.0")?.toDoubleOrNull() ?: 5.0
+        activeStrategy = p.getString("STRATEGY", "MODERADA") ?: "MODERADA"
 
-        val tfStr = p.getString("TIMEFRAME_VAL", "15m") ?: "15m" // Por defecto en 15m
+        val tfStr = p.getString("TIMEFRAME_VAL", "15m") ?: "15m"
         candleTimeframe = tfStr
-
-        candleIntervalMs = when(tfStr) {
-            "1m" -> 60_000L
-            "3m" -> 180_000L
-            "5m" -> 300_000L
-            "15m" -> 900_000L
-            "1h" -> 3_600_000L
-            else -> 300_000L
-        }
+        candleIntervalMs = if (tfStr == "15m") 900_000L else 300_000L
 
         activeSymbols.clear()
         if (p.getBoolean("COIN_BTC", true)) activeSymbols.add("BTCUSDT")
         if (p.getBoolean("COIN_ETH", false)) activeSymbols.add("ETHUSDT")
         if (p.getBoolean("COIN_SOL", false)) activeSymbols.add("SOLUSDT")
         if (p.getBoolean("COIN_XRP", false)) activeSymbols.add("XRPUSDT")
-
-        // Seguridad: Si desmarcas todas, siempre operará BTC
         if (activeSymbols.isEmpty()) activeSymbols.add("BTCUSDT")
 
         ultimateStrategies.clear()
