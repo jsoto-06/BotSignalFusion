@@ -5,9 +5,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
 import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,37 +19,20 @@ class HistoryFragment : Fragment() {
     private val tradeList = mutableListOf<TradeData>()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        // Asegúrate de que el layout se llame fragment_history
         return inflater.inflate(R.layout.fragment_history, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // 1. Inicializar Vistas
+        // 1. Inicializar vistas (Faltaba esto en tu código)
         tvHistoryBalance = view.findViewById(R.id.tvHistoryBalance)
-        rvHistory = view.findViewById(R.id.rvHistory)
-        val btnRefresh = view.findViewById<ImageButton>(R.id.btnRefreshHistory)
+        rvHistory = view.findViewById(R.id.rvHistory) // Asegúrate de tener este ID en el XML
 
         rvHistory.layoutManager = LinearLayoutManager(context)
 
-        // 2. Cargar saldo rápido desde caché (Evitando el error del doble $$)
-        val prefs = requireContext().getSharedPreferences("BotConfig", Context.MODE_PRIVATE)
-        val lastBalanceStr = prefs.getString("LAST_KNOWN_BALANCE", "0.00") ?: "0.00"
-        val lastBalanceNum = lastBalanceStr.toDoubleOrNull() ?: 0.0
-        tvHistoryBalance.text = "$${"%.2f".format(lastBalanceNum)}"
-
-        // 3. Configurar el Botón de Refrescar manual 🔄
-        btnRefresh.setOnClickListener {
-            // Animación de rotación para que sepa que está trabajando
-            it.animate().rotationBy(360f).setDuration(600).start()
-
-            // Lanzamos la descarga de datos reales de Bitget
-            fetchBitgetHistory()
-
-            Toast.makeText(context, "Sincronizando con Bitget...", Toast.LENGTH_SHORT).show()
-        }
-
-        // 4. Carga inicial automática
+        // Cargar historial
         fetchBitgetHistory()
     }
 
@@ -63,66 +44,52 @@ class HistoryFragment : Fragment() {
                 val secret = prefs.getString("SECRET_KEY", "") ?: ""
                 val pass = prefs.getString("API_PASSPHRASE", "") ?: ""
 
-                if (apiKey.isEmpty()) {
-                    withContext(Dispatchers.Main) {
-                        Toast.makeText(requireContext(), "Falta API Key", Toast.LENGTH_SHORT).show()
-                    }
-                    return@launch
-                }
-
-                // 🔧 BITGET API V2 REQUIERE TIMESTAMPS OBLIGATORIOS (Últimos 7 días)
-                val endTime = System.currentTimeMillis()
-                val startTime = endTime - (7L * 24 * 60 * 60 * 1000)
-
-                val endpoint = "/api/v2/mix/position/history-position?productType=USDT-FUTURES&limit=50&startTime=$startTime&endTime=$endTime"
+                // Endpoint de historial de órdenes (últimos 7 días)
+                val endpoint = "/api/v2/mix/order/history-orders?productType=USDT-FUTURES&limit=50"
 
                 val resp = BitgetUtils.authenticatedGet(endpoint, apiKey, secret, pass)
 
-                withContext(Dispatchers.Main) {
-                    if (resp != null) {
-                        val json = JSONObject(resp)
-                        if (json.optString("code") == "00000") {
+                if (resp != null) {
+                    val json = JSONObject(resp)
+                    if (json.optString("code") == "00000") {
+                        val dataArray = json.optJSONArray("data")
 
-                            // 🔧 PARSEO SEGURO: Evita crasheos si Bitget cambia la estructura del JSON
-                            val dataObj = json.optJSONObject("data")
-                            val listArray = dataObj?.optJSONArray("list") ?: json.optJSONArray("data")
+                        tradeList.clear()
 
-                            tradeList.clear()
+                        if (dataArray != null) {
+                            var totalPnL = 0.0
 
-                            if (listArray != null && listArray.length() > 0) {
-                                for (i in 0 until listArray.length()) {
-                                    val item = listArray.getJSONObject(i)
+                            for (i in 0 until dataArray.length()) {
+                                val item = dataArray.getJSONObject(i)
 
-                                    val sym = item.optString("symbol", "UNKNOWN")
-                                    val side = item.optString("holdSide", "LONG").uppercase()
+                                // Extraer datos reales del JSON de Bitget
+                                val sym = item.optString("symbol", "UNK")
+                                val side = item.optString("side", "buy") // buy/sell
+                                // En historial, buscamos el profit realizado
+                                val pnl = item.optString("totalProfits", "0.0").toDoubleOrNull() ?: 0.0
+                                val time = item.optString("uTime", "0").toLongOrNull() ?: 0L
 
-                                    // 🔧 Busca el PnL en varios nombres posibles
-                                    val pnlStr = item.optString("netProfit", item.optString("achievedProfits", item.optString("pnl", "0.0")))
-                                    val pnl = pnlStr.toDoubleOrNull() ?: 0.0
-
-                                    // 🔧 Usa el tiempo de actualización real
-                                    val time = item.optString("uTime", item.optString("cTime", "${System.currentTimeMillis()}")).toLongOrNull() ?: System.currentTimeMillis()
-
+                                // Solo agregamos si tiene PnL (es una orden cerrada/trade)
+                                if (pnl != 0.0) {
                                     tradeList.add(TradeData(sym, side, pnl, time))
+                                    totalPnL += pnl
                                 }
+                            }
 
-                                // Pintar la lista en pantalla
+                            // 🚨 CRÍTICO: Actualizar la UI en el Hilo Principal
+                            withContext(Dispatchers.Main) {
                                 rvHistory.adapter = HistoryAdapter(tradeList)
 
-                            } else {
-                                Toast.makeText(requireContext(), "No hay operaciones cerradas en los últimos 7 días", Toast.LENGTH_SHORT).show()
+                                // Actualizar balance visual del historial
+                                val color = if (totalPnL >= 0) "#00E676" else "#FF5252"
+                                tvHistoryBalance.text = "PnL Reciente: ${"%.2f".format(totalPnL)} USDT"
+                                tvHistoryBalance.setTextColor(android.graphics.Color.parseColor(color))
                             }
-                        } else {
-                            Toast.makeText(requireContext(), "Error API: ${json.optString("msg")}", Toast.LENGTH_LONG).show()
                         }
-                    } else {
-                        Toast.makeText(requireContext(), "Error de conexión con Bitget", Toast.LENGTH_SHORT).show()
                     }
                 }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    Toast.makeText(requireContext(), "Error procesando historial: ${e.message}", Toast.LENGTH_LONG).show()
-                }
+                e.printStackTrace()
             }
         }
     }
