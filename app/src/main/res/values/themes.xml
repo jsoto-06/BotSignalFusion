@@ -1,12 +1,43 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
+
     <style name="Base.Theme.BitgetBot" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">@color/primary_accent</item>
-        <item name="colorPrimaryVariant">@color/background_card</item>
+        <item name="colorPrimary">@color/neon_blue</item>
+        <item name="colorPrimaryVariant">@color/bg_card</item>
         <item name="colorOnPrimary">@color/white</item>
-        <item name="android:windowBackground">@color/background_main</item>
-        <item name="android:statusBarColor">@color/background_main</item>
-        <item name="android:navigationBarColor">@color/background_card</item>
+        <item name="colorSecondary">@color/neon_gold</item>
+        <item name="colorOnSecondary">@color/bg_main</item>
+        <item name="colorSurface">@color/bg_card</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:windowBackground">@color/bg_main</item>
+        <item name="android:statusBarColor">@color/bg_main</item>
+        <item name="android:navigationBarColor">@color/bg_card</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="m">false</item>
+        <!-- TextInputLayout -->
+        <item name="boxBackgroundColor">@color/bg_input</item>
+        <item name="android:textColorHint">@color/text_secondary</item>
     </style>
 
     <style name="Theme.BitgetBot" parent="Base.Theme.BitgetBot" />
+
+    <!-- ── Chips ── -->
+    <style name="Widget.App.Chip" parent="Widget.MaterialComponents.Chip.Action">
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="chipBackgroundColor">@color/bg_card_2</item>
+        <item name="chipStrokeWidth">1dp</item>
+    </style>
+
+    <!-- ── Botón primario ── -->
+    <style name="Widget.App.Button.Primary" parent="Widget.MaterialComponents.Button">
+        <item name="android:letterSpacing">0.08</item>
+        <item name="android:textStyle">bold</item>
+        <item name="cornerRadius">10dp</item>
+    </style>
+
+    <!-- ── SeekBar ── -->
+    <style name="Widget.App.SeekBar" parent="Widget.AppCompat.SeekBar">
+        <item name="android:progressBackgroundTint">@color/stroke_default</item>
+        <item name="android:progressTint">@color/neon_blue</item>
+        <item name="android:thumbTint">@color/text_primary</item>
+    </style>
+
 </resources>

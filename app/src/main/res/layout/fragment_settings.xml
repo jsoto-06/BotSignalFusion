@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -10,96 +11,221 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="32dp">
+
+        <!-- ════ TÍTULO ════ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PARÁMETROS"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:letterSpacing="0.25"
+            android:fontFamily="monospace" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Configuración"
             android:textColor="@color/text_primary"
-            android:textSize="28sp"
+            android:textSize="22sp"
             android:textStyle="bold"
-            android:layout_marginBottom="24dp"/>
+            android:letterSpacing="-0.02"
+            android:layout_marginBottom="24dp" />
 
+        <!-- ════ SECCIÓN: API ════ -->
         <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="CONEXIÓN API"
-            android:textColor="@color/neon_blue"
-            android:textSize="12sp"
+            android:textColor="@color/neon_cyan"
+            android:textSize="10sp"
             android:textStyle="bold"
-            android:layout_marginBottom="12dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="API Key"
-            android:textColorHint="@color/text_secondary"
-            app:boxBackgroundColor="@color/bg_input"
-            app:boxCornerRadiusTopStart="8dp"
-            app:boxCornerRadiusTopEnd="8dp"
-            app:boxStrokeWidth="0dp"
-            android:layout_marginBottom="12dp">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etApiKey"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:textColor="@color/text_primary"
-                android:singleLine="true"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Secret Key"
-            android:textColorHint="@color/text_secondary"
-            app:boxBackgroundColor="@color/bg_input"
-            app:endIconMode="password_toggle"
-            app:boxStrokeWidth="0dp"
-            android:layout_marginBottom="12dp">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etApiSecret"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPassword"
-                android:textColor="@color/text_primary"
-                android:singleLine="true"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Passphrase (Contraseña API)"
-            android:textColorHint="@color/text_secondary"
-            app:boxBackgroundColor="@color/bg_input"
-            app:endIconMode="password_toggle"
-            app:boxStrokeWidth="0dp"
-            android:layout_marginBottom="24dp">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etApiPassphrase"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="textPassword"
-                android:textColor="@color/text_primary"
-                android:singleLine="true"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <TextView
-            android:text="ESTRATEGIA MAESTRA"
-            android:textColor="@color/neon_gold"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:letterSpacing="0.2"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="10dp" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
             app:cardBackgroundColor="@color/bg_card"
-            app:cardCornerRadius="12dp"
-            app:strokeWidth="0dp"
-            android:layout_marginBottom="20dp">
+            app:cardCornerRadius="14dp"
+            app:strokeColor="@color/stroke_default"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="API Key"
+                    android:textColorHint="@color/text_secondary"
+                    app:boxBackgroundColor="@color/bg_input"
+                    app:boxBackgroundMode="filled"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="1dp"
+                    app:boxStrokeColor="@color/neon_cyan"
+                    android:layout_marginBottom="10dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etApiKey"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
+                        android:fontFamily="monospace"
+                        android:textSize="13sp"
+                        android:singleLine="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Secret Key"
+                    android:textColorHint="@color/text_secondary"
+                    app:boxBackgroundColor="@color/bg_input"
+                    app:boxBackgroundMode="filled"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:endIconMode="password_toggle"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="1dp"
+                    app:boxStrokeColor="@color/neon_cyan"
+                    android:layout_marginBottom="10dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etApiSecret"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:textColor="@color/text_primary"
+                        android:singleLine="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Passphrase"
+                    android:textColorHint="@color/text_secondary"
+                    app:boxBackgroundColor="@color/bg_input"
+                    app:boxBackgroundMode="filled"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:endIconMode="password_toggle"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="1dp"
+                    app:boxStrokeColor="@color/neon_cyan">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etApiPassphrase"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:textColor="@color/text_primary"
+                        android:singleLine="true" />
+                </com.google.android.material.textfield.TextInputLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ════ SECCIÓN: MODO DEMO/REAL ════ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="MODO DE TRADING"
+            android:textColor="@color/neon_gold"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.2"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="10dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardBackgroundColor="@color/bg_card"
+            app:cardCornerRadius="14dp"
+            app:strokeColor="@color/stroke_gold"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/tvDemoIndicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📊 MODO DEMO"
+                    android:textColor="@color/neon_gold"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Activar modo REAL (dinero real)"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="13sp" />
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchDemoMode"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:thumbTint="@color/white"
+                        app:trackTint="@color/neon_gold" />
+                </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ════ SECCIÓN: ESTRATEGIA ════ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ESTRATEGIA V9"
+            android:textColor="@color/neon_blue"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.2"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="10dp" />
+
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
+            app:cardBackgroundColor="@color/bg_card"
+            app:cardCornerRadius="14dp"
+            app:strokeColor="@color/stroke_default"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
 
             <RadioGroup
                 android:id="@+id/rgStrategy"
@@ -110,223 +236,363 @@
                 <RadioButton
                     android:id="@+id/rbModerada"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="🟢 MODERADA (Segura)"
+                    android:layout_height="48dp"
+                    android:text="🟢  MODERADA — 2/3 familias"
                     android:textColor="@color/text_primary"
+                    android:textSize="14sp"
                     android:buttonTint="@color/neon_green"
-                    android:checked="true"/>
+                    android:checked="true"
+                    android:paddingStart="8dp" />
 
-                <RadioButton
-                    android:id="@+id/rbAgresiva"
+                <View
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="🔴 AGRESIVA (Alta Frecuencia)"
-                    android:textColor="@color/text_primary"
-                    android:buttonTint="@color/neon_red"/>
+                    android:layout_height="1dp"
+                    android:background="@color/stroke_faint" />
 
                 <RadioButton
                     android:id="@+id/rbBreakout"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="🔵 BREAKOUT (Tendencia)"
+                    android:layout_height="48dp"
+                    android:text="🔵  BREAKOUT — tendencia HTF"
                     android:textColor="@color/text_primary"
-                    android:buttonTint="@color/neon_blue"/>
+                    android:textSize="14sp"
+                    android:buttonTint="@color/neon_blue"
+                    android:paddingStart="8dp" />
+
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/stroke_faint" />
+
+                <RadioButton
+                    android:id="@+id/rbAgresiva"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:text="🔴  AGRESIVA — 1/3 familias"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:buttonTint="@color/neon_red"
+                    android:paddingStart="8dp" />
             </RadioGroup>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- ════ SECCIÓN: ACTIVOS ════ -->
         <TextView
-            android:text="ACTIVOS A OPERAR"
-            android:textColor="@color/neon_cyan"
-            android:textSize="14sp"
-            android:letterSpacing="0.1"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:text="ACTIVOS"
+            android:textColor="@color/neon_cyan"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.2"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="10dp" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            app:cardBackgroundColor="@color/cyber_card_bg"
-            app:cardCornerRadius="16dp"
-            app:strokeColor="#33FFFFFF"
+            android:layout_marginBottom="20dp"
+            app:cardBackgroundColor="@color/bg_card"
+            app:cardCornerRadius="14dp"
+            app:strokeColor="@color/stroke_default"
             app:strokeWidth="1dp"
-            android:layout_marginBottom="24dp">
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="15dp">
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="8dp"
+                android:paddingBottom="8dp">
 
                 <CheckBox
                     android:id="@+id/cbBTC"
-                    android:text="Bitcoin (BTC)"
-                    android:textColor="@color/white"
-                    android:buttonTint="@color/neon_green"
-                    android:checked="true"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="48dp"
+                    android:text="Bitcoin  BTC/USDT"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:buttonTint="@color/neon_gold"
+                    android:checked="true" />
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/stroke_faint" />
+
                 <CheckBox
                     android:id="@+id/cbETH"
-                    android:text="Ethereum (ETH)"
-                    android:textColor="@color/white"
-                    android:buttonTint="@color/neon_green"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="48dp"
+                    android:text="Ethereum  ETH/USDT"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:buttonTint="@color/neon_blue" />
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/stroke_faint" />
+
                 <CheckBox
                     android:id="@+id/cbSOL"
-                    android:text="Solana (SOL)"
-                    android:textColor="@color/white"
-                    android:buttonTint="@color/neon_green"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="48dp"
+                    android:text="Solana  SOL/USDT"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:buttonTint="@color/neon_cyan" />
+
+                <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/stroke_faint" />
+
                 <CheckBox
                     android:id="@+id/cbXRP"
-                    android:text="Ripple (XRP)"
-                    android:textColor="@color/white"
-                    android:buttonTint="@color/neon_green"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"/>
+                    android:layout_height="48dp"
+                    android:text="Ripple  XRP/USDT"
+                    android:textColor="@color/text_primary"
+                    android:textSize="14sp"
+                    android:buttonTint="@color/neon_green" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- ════ SECCIÓN: RIESGO ════ -->
         <TextView
-            android:text="GESTIÓN DE RIESGO"
-            android:textColor="@color/text_secondary"
-            android:textSize="12sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="12dp"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Riesgo por Operación (%)"
-            app:boxBackgroundColor="@color/bg_input"
-            app:boxStrokeWidth="0dp"
-            android:layout_marginBottom="12dp">
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/etRisk"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:inputType="numberDecimal"
-                android:text="50.0"
-                android:textColor="@color/neon_gold"
-                android:textStyle="bold"/>
-        </com.google.android.material.textfield.TextInputLayout>
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="12dp">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:hint="TP Mínimo %"
-                app:boxBackgroundColor="@color/bg_input"
-                app:boxStrokeWidth="0dp"
-                android:layout_marginEnd="8dp">
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etTp"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="numberDecimal"
-                    android:text="2.0"
-                    android:textColor="@color/neon_green"/>
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:layout_height="wrap_content"
-                android:hint="SL Mínimo %"
-                app:boxBackgroundColor="@color/bg_input"
-                app:boxStrokeWidth="0dp">
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etSl"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:inputType="numberDecimal"
-                    android:text="1.5"
-                    android:textColor="@color/neon_red"/>
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
+            android:text="GESTIÓN DE RIESGO"
+            android:textColor="@color/neon_red"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.2"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="10dp" />
 
         <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="20dp"
             app:cardBackgroundColor="@color/bg_card"
-            app:cardCornerRadius="12dp"
-            app:strokeWidth="0dp"
-            android:layout_marginBottom="24dp">
+            app:cardCornerRadius="14dp"
+            app:strokeColor="@color/stroke_default"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:padding="16dp">
+
+                <!-- Risk % -->
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Riesgo por operación (%)"
+                    android:textColorHint="@color/text_secondary"
+                    app:boxBackgroundColor="@color/bg_input"
+                    app:boxBackgroundMode="filled"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="1dp"
+                    app:boxStrokeColor="@color/neon_red"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etRisk"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="numberDecimal"
+                        android:text="5.0"
+                        android:textColor="@color/neon_gold"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- TP / SL en fila -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:hint="Take Profit %"
+                        android:textColorHint="@color/text_secondary"
+                        app:boxBackgroundColor="@color/bg_input"
+                        app:boxBackgroundMode="filled"
+                        app:boxCornerRadiusTopStart="8dp"
+                        app:boxCornerRadiusTopEnd="8dp"
+                        app:boxCornerRadiusBottomStart="8dp"
+                        app:boxCornerRadiusBottomEnd="8dp"
+                        app:boxStrokeWidth="0dp"
+                        app:boxStrokeWidthFocused="1dp"
+                        app:boxStrokeColor="@color/neon_green"
+                        android:layout_marginEnd="8dp">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etTp"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="numberDecimal"
+                            android:text="2.0"
+                            android:textColor="@color/neon_green"
+                            android:textStyle="bold"
+                            android:fontFamily="monospace" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:layout_width="0dp"
+                        android:layout_weight="1"
+                        android:layout_height="wrap_content"
+                        android:hint="Stop Loss %"
+                        android:textColorHint="@color/text_secondary"
+                        app:boxBackgroundColor="@color/bg_input"
+                        app:boxBackgroundMode="filled"
+                        app:boxCornerRadiusTopStart="8dp"
+                        app:boxCornerRadiusTopEnd="8dp"
+                        app:boxCornerRadiusBottomStart="8dp"
+                        app:boxCornerRadiusBottomEnd="8dp"
+                        app:boxStrokeWidth="0dp"
+                        app:boxStrokeWidthFocused="1dp"
+                        app:boxStrokeColor="@color/neon_red">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etSl"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:inputType="numberDecimal"
+                            android:text="0.9"
+                            android:textColor="@color/neon_red"
+                            android:textStyle="bold"
+                            android:fontFamily="monospace" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <!-- Apalancamiento -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/stroke_faint"
+                    android:layout_marginBottom="12dp" />
+
                 <TextView
                     android:id="@+id/tvLeverageLabel"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="Apalancamiento: 5x"
+                    android:text="Apalancamiento: 10x"
                     android:textColor="@color/text_primary"
-                    android:textStyle="bold"/>
+                    android:textStyle="bold"
+                    android:textSize="14sp"
+                    android:fontFamily="monospace"
+                    android:layout_marginBottom="6dp" />
+
                 <SeekBar
                     android:id="@+id/sbLeverage"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:max="20"
-                    android:progress="5"
-                    android:layout_marginTop="8dp"
+                    android:progress="10"
                     android:progressTint="@color/neon_blue"
-                    android:thumbTint="@color/text_primary"/>
+                    android:thumbTint="@color/text_primary"
+                    android:progressBackgroundTint="@color/stroke_medium" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="4dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="1x"
+                        android:textColor="@color/text_hint"
+                        android:textSize="10sp"
+                        android:fontFamily="monospace" />
+                    <View android:layout_width="0dp" android:layout_height="0dp" android:layout_weight="1" />
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="20x"
+                        android:textColor="@color/text_hint"
+                        android:textSize="10sp"
+                        android:fontFamily="monospace" />
+                </LinearLayout>
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- ════ SECCIÓN: AVANZADO ════ -->
         <TextView
-            android:text="PARÁMETROS AVANZADOS"
-            android:textColor="@color/neon_cyan"
-            android:textSize="14sp"
-            android:letterSpacing="0.1"
-            android:textStyle="bold"
-            android:layout_marginBottom="16dp"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:text="PARÁMETROS AVANZADOS"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.2"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="10dp" />
 
-        <LinearLayout
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:layout_marginBottom="24dp">
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Temporalidad de Velas"
-                android:textColor="@color/text_secondary"
-                android:textSize="12sp"
-                android:layout_marginBottom="4dp"/>
-            <Spinner
-                android:id="@+id/spinnerTimeframe"
+            android:layout_marginBottom="20dp"
+            app:cardBackgroundColor="@color/bg_card"
+            app:cardCornerRadius="14dp"
+            app:strokeColor="@color/stroke_default"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:backgroundTint="@color/text_primary"/>
-        </LinearLayout>
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="TEMPORALIDAD DE VELAS"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="9sp"
+                    android:letterSpacing="0.15"
+                    android:fontFamily="monospace"
+                    android:layout_marginBottom="6dp" />
+
+                <Spinner
+                    android:id="@+id/spinnerTimeframe"
+                    android:layout_width="match_parent"
+                    android:layout_height="48dp"
+                    android:backgroundTint="@color/stroke_medium"
+                    android:background="@color/bg_input"
+                    android:paddingStart="12dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ════ SECCIÓN: TELEGRAM ════ -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="ALERTAS TELEGRAM"
+            android:textColor="@color/neon_blue"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.2"
+            android:fontFamily="monospace"
+            android:layout_marginBottom="10dp" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardTelegram"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_below="@id/cardActiveTrade"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@color/cyber_card_bg"
-            app:cardCornerRadius="16dp"
-            app:strokeColor="#33FFFFFF"
-            app:strokeWidth="1dp">
+            android:layout_marginBottom="24dp"
+            app:cardBackgroundColor="@color/bg_card"
+            app:cardCornerRadius="14dp"
+            app:strokeColor="@color/stroke_default"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -339,72 +605,102 @@
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:layout_marginBottom="10dp">
+                    android:layout_marginBottom="12dp">
 
                     <TextView
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:text="ALERTAS TELEGRAM"
-                        android:textColor="@color/neon_blue"
-                        android:textStyle="bold" />
+                        android:text="Activar notificaciones"
+                        android:textColor="@color/text_primary"
+                        android:textSize="14sp" />
 
                     <androidx.appcompat.widget.SwitchCompat
                         android:id="@+id/switchTelegram"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text=""
                         app:showText="false"
                         app:thumbTint="@color/white"
                         app:trackTint="@color/neon_blue" />
                 </LinearLayout>
 
-                <EditText
-                    android:id="@+id/etTelegramToken"
+                <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#2A2A35"
-                    android:hint="Pega aquí tu Bot Token"
-                    android:textColorHint="#555"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:padding="10dp"
-                    android:layout_marginBottom="8dp"/>
+                    android:hint="Bot Token"
+                    android:textColorHint="@color/text_secondary"
+                    app:boxBackgroundColor="@color/bg_input"
+                    app:boxBackgroundMode="filled"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="1dp"
+                    app:boxStrokeColor="@color/neon_blue"
+                    android:layout_marginBottom="10dp">
 
-                <EditText
-                    android:id="@+id/etTelegramChatId"
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etTelegramToken"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_primary"
+                        android:fontFamily="monospace"
+                        android:textSize="12sp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="#2A2A35"
-                    android:hint="Pega aquí tu Chat ID"
-                    android:textColorHint="#555"
-                    android:textColor="@color/white"
-                    android:textSize="12sp"
-                    android:padding="10dp"
-                    android:layout_marginBottom="8dp"/>
+                    android:hint="Chat ID"
+                    android:textColorHint="@color/text_secondary"
+                    app:boxBackgroundColor="@color/bg_input"
+                    app:boxBackgroundMode="filled"
+                    app:boxCornerRadiusTopStart="8dp"
+                    app:boxCornerRadiusTopEnd="8dp"
+                    app:boxCornerRadiusBottomStart="8dp"
+                    app:boxCornerRadiusBottomEnd="8dp"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="1dp"
+                    app:boxStrokeColor="@color/neon_blue"
+                    android:layout_marginBottom="12dp">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etTelegramChatId"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:textColor="@color/text_primary"
+                        android:fontFamily="monospace"
+                        android:textSize="12sp" />
+                </com.google.android.material.textfield.TextInputLayout>
 
                 <Button
                     android:id="@+id/btnSaveTelegram"
                     android:layout_width="match_parent"
-                    android:layout_height="40dp"
-                    android:text="GUARDAR CONFIGURACIÓN"
-                    android:textSize="10sp"
-                    app:backgroundTint="@color/neon_blue"/>
-
+                    android:layout_height="44dp"
+                    android:text="GUARDAR TELEGRAM"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:letterSpacing="0.06"
+                    android:backgroundTint="@color/neon_blue"
+                    android:textColor="@color/white"
+                    app:cornerRadius="10dp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
+        <!-- ════ BOTÓN GUARDAR PRINCIPAL ════ -->
         <Button
             android:id="@+id/btnSave"
             android:layout_width="match_parent"
-            android:layout_height="60dp"
+            android:layout_height="58dp"
             android:text="GUARDAR CONFIGURACIÓN"
-            android:backgroundTint="@color/neon_blue"
+            android:backgroundTint="@color/neon_green"
             android:textColor="@color/bg_main"
             android:textStyle="bold"
-            android:textSize="16sp"
-            app:cornerRadius="12dp"/>
-
+            android:textSize="15sp"
+            android:letterSpacing="0.08"
+            app:cornerRadius="12dp" />
 
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

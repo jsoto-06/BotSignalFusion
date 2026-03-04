@@ -1,447 +1,578 @@
 <?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_cyberpunk_gradient"
-    android:padding="20dp">
-
-    <TextView
-        android:id="@+id/tvHeader"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="FUTURES TERMINAL"
-        android:textColor="@color/text_grey"
-        android:textSize="12sp"
-        android:letterSpacing="0.2"
-        android:textStyle="bold" />
-
-    <TextView
-        android:id="@+id/tvTitle"
-        android:layout_below="@id/tvHeader"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="SignalFusion Pro"
-        android:textColor="@color/white"
-        android:textSize="26sp"
-        android:fontFamily="sans-serif-black" />
-
-    <com.google.android.material.chip.Chip
-        android:id="@+id/chipStatus"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_alignParentEnd="true"
-        android:text="● ONLINE"
-        android:textColor="@color/neon_green"
-        app:chipBackgroundColor="@color/cyber_card_bg"
-        app:chipStrokeColor="@color/neon_green"
-        app:chipStrokeWidth="1dp" />
-
-    <TextView
-        android:id="@+id/tvSaludBot"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/chipStatus"
-        android:layout_alignParentEnd="true"
-        android:layout_marginTop="4dp"
-        android:text="⚪ Calibrando..."
-        android:textSize="11sp"
-        android:textStyle="bold"
-        android:textColor="@color/text_grey"/>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardSwitch"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/tvTitle"
-        android:layout_marginTop="20dp"
-        app:cardBackgroundColor="@color/cyber_card_bg"
-        app:cardCornerRadius="20dp"
-        app:strokeColor="#22FFFFFF"
-        app:strokeWidth="1dp">
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="15dp">
-            <ImageView
-                android:id="@+id/iconPower"
-                android:layout_width="24dp"
-                android:layout_height="24dp"
-                android:src="@android:drawable/ic_lock_power_off"
-                app:tint="@color/white"
-                android:layout_centerVertical="true"/>
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_toEndOf="@id/iconPower"
-                android:layout_marginStart="12dp"
-                android:layout_centerVertical="true">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="MOTOR AUTOMÁTICO"
-                    android:textColor="@color/white"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-                <TextView
-                    android:id="@+id/txtEstadoSimple"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Escaneando..."
-                    android:textColor="@color/neon_green"
-                    android:textSize="11sp" />
-            </LinearLayout>
-
-            <androidx.appcompat.widget.SwitchCompat
-                android:id="@+id/switchBotActive"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_alignParentEnd="true"
-                android:layout_centerVertical="true"
-                android:text=""
-                app:showText="false"
-                app:thumbTint="@color/white"
-                app:trackTint="@color/neon_green" />
-
-        </RelativeLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardMain"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/cardSwitch"
-        android:layout_marginTop="15dp"
-        app:cardBackgroundColor="@color/cyber_card_bg"
-        app:cardCornerRadius="24dp"
-        app:strokeColor="#33FFFFFF"
-        app:strokeWidth="1dp">
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="20dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="CAPITAL TOTAL (USDT)"
-                android:textColor="@color/text_grey"
-                android:textSize="11sp" />
-
-            <TextView
-                android:id="@+id/tvTotalBalance"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-light"
-                android:text="$1,000.00"
-                android:textColor="@color/neon_green"
-                android:textSize="42sp" />
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="5dp">
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="WIN RATE (24H)"
-                        android:textColor="@color/text_grey"
-                        android:textSize="10sp"
-                        android:textStyle="bold"/>
-                    <TextView
-                        android:id="@+id/tvWinRate"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="--%"
-                        android:textColor="@color/neon_gold"
-                        android:textSize="18sp"
-                        android:textStyle="bold"/>
-                </LinearLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical"
-                    android:gravity="end">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="PnL DIARIO"
-                        android:textColor="@color/text_grey"
-                        android:textSize="10sp"
-                        android:textStyle="bold"/>
-                    <TextView
-                        android:id="@+id/tvDailyPnL"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="$0.00"
-                        android:textColor="@color/white"
-                        android:textSize="18sp"
-                        android:textStyle="bold"/>
-                </LinearLayout>
-            </LinearLayout>
-
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="#22FFFFFF"
-                android:layout_marginVertical="10dp" />
-
-            <TextView
-                android:id="@+id/tvLivePrice"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="BTC: $00,000.00"
-                android:textColor="@color/white"
-                android:textSize="14sp"
-                android:alpha="0.8" />
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
+    android:background="@color/bg_main"
+    android:fillViewport="true">
 
     <LinearLayout
-        android:id="@+id/layoutIndicators"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/cardMain"
-        android:layout_marginTop="12dp"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="24dp">
 
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:layout_marginEnd="6dp"
-            app:cardBackgroundColor="@color/cyber_card_bg"
-            app:cardCornerRadius="12dp">
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="10dp"
-                android:gravity="center">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="RSI"
-                    android:textColor="@color/text_grey"
-                    android:textSize="9sp" />
-                <TextView
-                    android:id="@+id/txtRSI"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="--"
-                    android:textColor="@color/neon_gold"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.2"
-            android:layout_marginEnd="6dp"
-            app:cardBackgroundColor="@color/cyber_card_bg"
-            app:cardCornerRadius="12dp">
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="10dp"
-                android:gravity="center">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="TENDENCIA"
-                    android:textColor="@color/text_grey"
-                    android:textSize="9sp" />
-                <TextView
-                    android:id="@+id/txtTendencia"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="--"
-                    android:textColor="@color/neon_green"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            app:cardBackgroundColor="@color/cyber_card_bg"
-            app:cardCornerRadius="12dp">
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="10dp"
-                android:gravity="center">
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="ATR"
-                    android:textColor="@color/text_grey"
-                    android:textSize="9sp" />
-                <TextView
-                    android:id="@+id/txtVolatilidad"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="--"
-                    android:textColor="@color/neon_cyan"
-                    android:textSize="18sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-    </LinearLayout>
-
-    <com.google.android.material.card.MaterialCardView
-        android:id="@+id/cardActiveTrade"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/layoutIndicators"
-        android:layout_marginTop="16dp"
-        android:visibility="gone"
-        app:cardBackgroundColor="#1A1A24"
-        app:cardCornerRadius="16dp"
-        app:strokeColor="@color/neon_blue"
-        app:strokeWidth="1dp">
-
+        <!-- ════ CABECERA ════ -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp">
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="20dp">
 
             <LinearLayout
-                android:layout_width="match_parent"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:layout_marginBottom="12dp">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:src="@android:drawable/ic_menu_compass"
-                    app:tint="@color/neon_blue"
-                    android:layout_marginEnd="8dp"/>
+                android:layout_weight="1"
+                android:orientation="vertical">
 
                 <TextView
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="POSICIÓN ACTIVA"
-                    android:textColor="@color/neon_blue"
-                    android:textSize="12sp"
+                    android:text="FUTURES TERMINAL"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:letterSpacing="0.25"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SignalFusion V9"
+                    android:textColor="@color/text_primary"
+                    android:textSize="22sp"
                     android:textStyle="bold"
-                    android:letterSpacing="0.1"/>
-
-                <TextView
-                    android:id="@+id/tvTradeTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="00:00"
-                    android:textColor="@color/text_grey"
-                    android:textSize="12sp"
-                    android:fontFamily="monospace"/>
+                    android:letterSpacing="-0.02" />
             </LinearLayout>
+
+            <!-- Badge de estado -->
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="34dp"
+                android:text="● OFFLINE"
+                android:textColor="@color/text_secondary"
+                android:textSize="11sp"
+                android:textStyle="bold"
+                app:chipBackgroundColor="@color/bg_card"
+                app:chipStrokeColor="@color/stroke_default"
+                app:chipStrokeWidth="1dp"
+                app:chipMinHeight="34dp" />
+        </LinearLayout>
+
+        <!-- ════ CARD MOTOR ON/OFF ════ -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardSwitch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/bg_card"
+            app:cardCornerRadius="14dp"
+            app:strokeColor="@color/stroke_default"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
-                android:layout_marginBottom="16dp">
+                android:paddingStart="16dp"
+                android:paddingEnd="12dp"
+                android:paddingTop="14dp"
+                android:paddingBottom="14dp">
+
+                <!-- Icono power -->
+                <LinearLayout
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:gravity="center"
+                    android:background="#1A1E90FF"
+                    android:backgroundTint="#1A1E90FF">
+                    <!-- placeholder usable sin drawable custom -->
+                </LinearLayout>
 
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:layout_marginStart="12dp">
+
                     <TextView
-                        android:id="@+id/tvTradeSymbol"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="BTCUSDT"
-                        android:textColor="@color/white"
-                        android:textSize="20sp"
-                        android:textStyle="bold"/>
+                        android:text="MOTOR AUTOMÁTICO"
+                        android:textColor="@color/text_primary"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:letterSpacing="0.05" />
+
                     <TextView
-                        android:id="@+id/tvTradeType"
+                        android:id="@+id/txtEstadoSimple"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="LONG ↗"
-                        android:textColor="@color/neon_green"
-                        android:textSize="14sp"
-                        android:textStyle="bold"/>
+                        android:text="Inactivo"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp" />
                 </LinearLayout>
 
-                <LinearLayout
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchBotActive"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="end">
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="PnL Actual"
-                        android:textColor="@color/text_grey"
-                        android:textSize="11sp"/>
-                    <TextView
-                        android:id="@+id/tvTradePnL"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="+0.00%"
-                        android:textColor="@color/white"
-                        android:textSize="24sp"
-                        android:textStyle="bold"/>
-                </LinearLayout>
+                    app:showText="false"
+                    app:thumbTint="@color/white"
+                    app:trackTint="@color/neon_green" />
             </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
-            <Button
-                android:id="@+id/btnCloseTrade"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:text="CERRAR POSICIÓN"
-                android:backgroundTint="@color/neon_red"
-                android:textColor="@color/white"
-                android:textStyle="bold"
-                app:cornerRadius="8dp"/>
-
-        </LinearLayout>
-    </com.google.android.material.card.MaterialCardView>
-
-    <LinearLayout
-        android:id="@+id/layoutBottomLog"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/cardActiveTrade"
-        android:layout_marginTop="15dp"
-        android:background="#1A000000"
-        android:padding="12dp">
-        <TextView
-            android:id="@+id/txtEstadoDetalle"
-            android:layout_width="wrap_content"
+        <!-- ════ CARD BALANCE PRINCIPAL ════ -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardMain"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="> Esperando señales..."
-            android:textColor="@color/neon_green"
-            android:fontFamily="monospace"
-            android:textSize="12sp" />
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/bg_card"
+            app:cardCornerRadius="18dp"
+            app:strokeColor="@color/stroke_gold"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:paddingTop="18dp"
+                android:paddingBottom="18dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="CAPITAL TOTAL"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="10sp"
+                    android:letterSpacing="0.2"
+                    android:fontFamily="monospace" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="USDT  "
+                        android:textColor="@color/neon_gold"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace" />
+
+                    <TextView
+                        android:id="@+id/tvTotalBalance"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0.00"
+                        android:textColor="@color/text_primary"
+                        android:textSize="38sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace"
+                        android:letterSpacing="-0.02" />
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/stroke_faint"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="14dp" />
+
+                <!-- Win Rate + PnL Diario -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="WIN RATE 24H"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="9sp"
+                            android:letterSpacing="0.15"
+                            android:fontFamily="monospace" />
+
+                        <TextView
+                            android:id="@+id/tvWinRate"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--%"
+                            android:textColor="@color/neon_gold"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:fontFamily="monospace" />
+                    </LinearLayout>
+
+                    <!-- Separador vertical -->
+                    <View
+                        android:layout_width="1dp"
+                        android:layout_height="40dp"
+                        android:background="@color/stroke_faint"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginEnd="16dp" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="end">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="PnL DIARIO"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="9sp"
+                            android:letterSpacing="0.15"
+                            android:fontFamily="monospace" />
+
+                        <TextView
+                            android:id="@+id/tvDailyPnL"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="$0.00"
+                            android:textColor="@color/text_primary"
+                            android:textSize="20sp"
+                            android:textStyle="bold"
+                            android:fontFamily="monospace" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Precio en vivo -->
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/stroke_faint"
+                    android:layout_marginTop="14dp"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:id="@+id/tvLivePrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="PRECIO  $0.00"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ════ INDICADORES RSI / TENDENCIA / ATR ════ -->
+        <LinearLayout
+            android:id="@+id/layoutIndicators"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="12dp">
+
+            <!-- RSI -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="6dp"
+                app:cardBackgroundColor="@color/bg_card"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="@color/stroke_default"
+                app:strokeWidth="1dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="RSI"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="9sp"
+                        android:letterSpacing="0.2"
+                        android:fontFamily="monospace" />
+
+                    <TextView
+                        android:id="@+id/txtRSI"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="@color/neon_gold"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- TENDENCIA -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1.4"
+                android:layout_marginEnd="6dp"
+                app:cardBackgroundColor="@color/bg_card"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="@color/stroke_default"
+                app:strokeWidth="1dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TENDENCIA"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="9sp"
+                        android:letterSpacing="0.2"
+                        android:fontFamily="monospace" />
+
+                    <TextView
+                        android:id="@+id/txtTendencia"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ANÁLISIS"
+                        android:textColor="@color/neon_cyan"
+                        android:textSize="14sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- ATR -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                app:cardBackgroundColor="@color/bg_card"
+                app:cardCornerRadius="12dp"
+                app:strokeColor="@color/stroke_default"
+                app:strokeWidth="1dp"
+                app:cardElevation="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="12dp"
+                    android:gravity="center">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="ATR%"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="9sp"
+                        android:letterSpacing="0.2"
+                        android:fontFamily="monospace" />
+
+                    <TextView
+                        android:id="@+id/txtVolatilidad"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="--"
+                        android:textColor="@color/neon_blue"
+                        android:textSize="22sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <!-- ════ CARD POSICIÓN ACTIVA ════ -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardActiveTrade"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="12dp"
+            app:cardBackgroundColor="@color/bg_card_2"
+            app:cardCornerRadius="16dp"
+            app:strokeColor="@color/stroke_default"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:paddingTop="16dp"
+                android:paddingBottom="16dp">
+
+                <!-- Header posición -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="POSICIÓN ACTIVA"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="10sp"
+                        android:letterSpacing="0.2"
+                        android:fontFamily="monospace" />
+
+                    <TextView
+                        android:id="@+id/tvTradeTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="00:00"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:fontFamily="monospace" />
+                </LinearLayout>
+
+                <!-- Symbol + PnL -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="16dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvTradeSymbol"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="🔍 ESCANEANDO MERCADO..."
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/tvTradeType"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="BUSCANDO SEÑAL"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:textStyle="bold"
+                            android:fontFamily="monospace" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:gravity="end">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="PnL"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="10sp"
+                            android:fontFamily="monospace" />
+
+                        <TextView
+                            android:id="@+id/tvTradePnL"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="--"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="26sp"
+                            android:textStyle="bold"
+                            android:fontFamily="monospace" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Botón cierre -->
+                <Button
+                    android:id="@+id/btnCloseTrade"
+                    android:layout_width="match_parent"
+                    android:layout_height="46dp"
+                    android:text="CERRAR POSICIÓN"
+                    android:backgroundTint="@color/neon_red"
+                    android:textColor="@color/white"
+                    android:textStyle="bold"
+                    android:textSize="13sp"
+                    android:letterSpacing="0.08"
+                    android:visibility="invisible"
+                    app:cornerRadius="10dp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- ════ CONSOLA DE LOG ════ -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:cardBackgroundColor="@color/bg_card"
+            app:cardCornerRadius="12dp"
+            app:strokeColor="@color/stroke_faint"
+            app:strokeWidth="1dp"
+            app:cardElevation="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:paddingStart="14dp"
+                android:paddingEnd="14dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="›  "
+                    android:textColor="@color/neon_green"
+                    android:textSize="14sp"
+                    android:fontFamily="monospace" />
+
+                <TextView
+                    android:id="@+id/txtEstadoDetalle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Esperando señales..."
+                    android:textColor="@color/neon_green"
+                    android:textSize="12sp"
+                    android:fontFamily="monospace" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
     </LinearLayout>
-
-
-
-</RelativeLayout>
+</androidx.core.widget.NestedScrollView>

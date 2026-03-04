@@ -1,43 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_cyberpunk_gradient"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:background="@color/bg_main"
+    android:orientation="vertical">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <!-- ════ CABECERA ════ -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="HISTORIAL DE TRADING"
-        android:textColor="@color/white"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:letterSpacing="0.1"
-        android:layout_marginBottom="16dp"/>
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingTop="20dp"
+        android:paddingBottom="16dp">
 
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="REGISTRO DE TRADES"
+            android:textColor="@color/text_secondary"
+            android:textSize="10sp"
+            android:letterSpacing="0.25"
+            android:fontFamily="monospace" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Historial"
+            android:textColor="@color/text_primary"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:letterSpacing="-0.02" />
+    </LinearLayout>
+
+    <!-- ════ CARD RESUMEN ════ -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        app:cardBackgroundColor="@color/cyber_card_bg"
-        app:cardCornerRadius="16dp"
-        app:strokeColor="#33FFFFFF"
-        app:strokeWidth="1dp">
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="12dp"
+        app:cardBackgroundColor="@color/bg_card"
+        app:cardCornerRadius="18dp"
+        app:strokeColor="@color/stroke_gold"
+        app:strokeWidth="1dp"
+        app:cardElevation="0dp">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="16dp">
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="16dp"
+            android:paddingBottom="16dp">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="PnL ACUMULADO"
-                android:textColor="@color/text_grey"
-                android:textSize="10sp"/>
+                android:textColor="@color/text_secondary"
+                android:textSize="10sp"
+                android:letterSpacing="0.2"
+                android:fontFamily="monospace" />
 
             <TextView
                 android:id="@+id/tvHistoryBalance"
@@ -45,14 +73,18 @@
                 android:layout_height="wrap_content"
                 android:text="$0.00 USDT"
                 android:textColor="@color/neon_green"
-                android:textSize="24sp"
-                android:textStyle="bold"/>
+                android:textSize="28sp"
+                android:textStyle="bold"
+                android:fontFamily="monospace"
+                android:letterSpacing="-0.02" />
 
+            <!-- Divider -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:background="#22FFFFFF"
-                android:layout_marginVertical="10dp"/>
+                android:background="@color/stroke_faint"
+                android:layout_marginTop="14dp"
+                android:layout_marginBottom="14dp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -64,21 +96,33 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:orientation="vertical">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="WIN RATE"
-                        android:textColor="@color/text_grey"
-                        android:textSize="10sp"/>
+                        android:textColor="@color/text_secondary"
+                        android:textSize="9sp"
+                        android:letterSpacing="0.15"
+                        android:fontFamily="monospace" />
+
                     <TextView
                         android:id="@+id/tvWinRate"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="--%"
                         android:textColor="@color/neon_gold"
-                        android:textSize="16sp"
-                        android:textStyle="bold"/>
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace" />
                 </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="40dp"
+                    android:background="@color/stroke_faint"
+                    android:layout_gravity="center_vertical"
+                    android:layout_marginEnd="16dp" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -86,28 +130,50 @@
                     android:layout_weight="1"
                     android:orientation="vertical"
                     android:gravity="end">
+
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="TOTAL TRADES"
-                        android:textColor="@color/text_grey"
-                        android:textSize="10sp"/>
+                        android:textColor="@color/text_secondary"
+                        android:textSize="9sp"
+                        android:letterSpacing="0.15"
+                        android:fontFamily="monospace" />
+
                     <TextView
                         android:id="@+id/tvTotalTrades"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="0"
-                        android:textColor="@color/white"
-                        android:textSize="16sp"
-                        android:textStyle="bold"/>
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:fontFamily="monospace" />
                 </LinearLayout>
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
+    <!-- Etiqueta lista -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="OPERACIONES RECIENTES"
+        android:textColor="@color/text_secondary"
+        android:textSize="9sp"
+        android:letterSpacing="0.2"
+        android:fontFamily="monospace"
+        android:paddingStart="16dp"
+        android:paddingBottom="8dp" />
+
+    <!-- ════ LISTA ════ -->
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvHistory"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:clipToPadding="false" />
 
 </LinearLayout>

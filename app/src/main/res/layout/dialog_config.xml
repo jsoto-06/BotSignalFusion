@@ -1,59 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="20dp"
-    android:background="#202020">
+    android:background="@color/bg_card"
+    android:padding="24dp">
+
+    <!-- Título -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="CLAVES BITGET API"
+        android:textColor="@color/text_primary"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:letterSpacing="0.1"
+        android:fontFamily="monospace"
+        android:layout_marginBottom="4dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Configuración API Bitget"
-        android:textColor="#FFFFFF"
-        android:textSize="18sp"
-        android:textStyle="bold"
-        android:layout_marginBottom="15dp"/>
+        android:text="Introduce tus credenciales de acceso"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:layout_marginBottom="20dp" />
 
-    <EditText
-        android:id="@+id/etApiKey"
+    <!-- API Key -->
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Pegar API Key aquí"
-        android:textColor="#FFFFFF"
-        android:textColorHint="#808080"
-        android:backgroundTint="#FFFFFF"
-        android:inputType="textNoSuggestions"/>
+        android:hint="API Key"
+        android:textColorHint="@color/text_secondary"
+        app:boxBackgroundColor="@color/bg_input"
+        app:boxBackgroundMode="filled"
+        app:boxCornerRadiusTopStart="8dp"
+        app:boxCornerRadiusTopEnd="8dp"
+        app:boxCornerRadiusBottomStart="8dp"
+        app:boxCornerRadiusBottomEnd="8dp"
+        app:boxStrokeWidth="0dp"
+        app:boxStrokeWidthFocused="1dp"
+        app:boxStrokeColor="@color/neon_cyan"
+        android:layout_marginBottom="10dp">
 
-    <EditText
-        android:id="@+id/etSecretKey"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etApiKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textNoSuggestions"
+            android:textColor="@color/text_primary"
+            android:fontFamily="monospace"
+            android:textSize="13sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Secret Key -->
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Pegar Secret Key aquí"
-        android:textColor="#FFFFFF"
-        android:textColorHint="#808080"
-        android:backgroundTint="#FFFFFF"
-        android:layout_marginTop="10dp"
-        android:inputType="textPassword"/>
+        android:hint="Secret Key"
+        android:textColorHint="@color/text_secondary"
+        app:boxBackgroundColor="@color/bg_input"
+        app:boxBackgroundMode="filled"
+        app:boxCornerRadiusTopStart="8dp"
+        app:boxCornerRadiusTopEnd="8dp"
+        app:boxCornerRadiusBottomStart="8dp"
+        app:boxCornerRadiusBottomEnd="8dp"
+        app:endIconMode="password_toggle"
+        app:boxStrokeWidth="0dp"
+        app:boxStrokeWidthFocused="1dp"
+        app:boxStrokeColor="@color/neon_cyan"
+        android:layout_marginBottom="10dp">
 
-    <EditText
-        android:id="@+id/etPassphrase"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etSecretKey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Passphrase -->
+    <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Escribir Passphrase"
-        android:textColor="#FFFFFF"
-        android:textColorHint="#808080"
-        android:backgroundTint="#FFFFFF"
-        android:layout_marginTop="10dp"
-        android:inputType="textPassword"/>
+        android:hint="Passphrase"
+        android:textColorHint="@color/text_secondary"
+        app:boxBackgroundColor="@color/bg_input"
+        app:boxBackgroundMode="filled"
+        app:boxCornerRadiusTopStart="8dp"
+        app:boxCornerRadiusTopEnd="8dp"
+        app:boxCornerRadiusBottomStart="8dp"
+        app:boxCornerRadiusBottomEnd="8dp"
+        app:endIconMode="password_toggle"
+        app:boxStrokeWidth="0dp"
+        app:boxStrokeWidthFocused="1dp"
+        app:boxStrokeColor="@color/neon_cyan"
+        android:layout_marginBottom="20dp">
 
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etPassphrase"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:textColor="@color/text_primary"
+            android:textSize="13sp" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Botón -->
     <Button
         android:id="@+id/btnSave"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="50dp"
         android:text="GUARDAR CLAVES"
-        android:backgroundTint="#0ECB81"
-        android:textColor="#FFFFFF"
-        android:layout_marginTop="20dp"/>
+        android:backgroundTint="@color/neon_green"
+        android:textColor="@color/bg_main"
+        android:textStyle="bold"
+        android:textSize="13sp"
+        android:letterSpacing="0.08"
+        app:cornerRadius="10dp" />
 
 </LinearLayout>

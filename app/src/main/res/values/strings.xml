@@ -1,5 +1,16 @@
 <resources>
     <string name="app_name">SignalFusion Pro</string>
-    <!-- TODO: Remove or change this placeholder text -->
+    <string name="nav_bot">Terminal</string>
+    <string name="nav_history">Historial</string>
+    <string name="nav_settings">Config</string>
+    <string name="status_online">● EN VIVO</string>
+    <string name="status_offline">● OFFLINE</string>
+    <string name="scanning">ESCANEANDO MERCADO</string>
+    <string name="motor_label">MOTOR V9</string>
+    <string name="close_position">CERRAR POSICIÓN</string>
+    <string name="save_config">GUARDAR CONFIGURACIÓN</string>
+    <string name="demo_mode">📊 MODO DEMO</string>
+    <string name="real_mode">💰 MODO REAL</string>
+    <string name="futures_terminal">FUTURES TERMINAL</string>
     <string name="hello_blank_fragment">Hello blank fragment</string>
 </resources>

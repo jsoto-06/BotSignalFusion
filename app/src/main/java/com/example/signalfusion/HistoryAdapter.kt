@@ -54,4 +54,3 @@ class HistoryAdapter(private val trades: List<TradeData>) : RecyclerView.Adapter
         return SimpleDateFormat("dd/MM HH:mm", Locale.getDefault()).format(Date(ms))
     }
 }
-
