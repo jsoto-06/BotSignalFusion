@@ -15,7 +15,6 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
-// IMPORTANTE: Cambiado de MaterialSwitch a SwitchCompat
 import androidx.appcompat.widget.SwitchCompat
 
 class BotFragment : Fragment() {
@@ -25,7 +24,6 @@ class BotFragment : Fragment() {
     private lateinit var txtRSI: TextView
     private lateinit var txtTendencia: TextView
     private lateinit var txtEstadoDetalle: TextView
-    // IMPORTANTE: Variable actualizada
     private lateinit var switchBotActive: SwitchCompat
     private lateinit var chipStatus: Chip
 
@@ -35,10 +33,10 @@ class BotFragment : Fragment() {
     private lateinit var tvTradePnL: TextView
     private lateinit var btnCloseTrade: Button
 
-    // Variables para el nuevo diseño (WinRate y PnL Diario)
     private lateinit var tvWinRate: TextView
     private lateinit var tvDailyPnL: TextView
 
+    // 🔥 RECEPTOR ACTUALIZADO PARA ESCUCHAR EL WIN RATE 🔥
     private val tradingReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             if (intent?.action == "ACTUALIZACION_TRADING") {
@@ -53,12 +51,32 @@ class BotFragment : Fragment() {
                 if (tradeOpen) actualizarTarjetaConOperacion(intent)
                 else actualizarTarjetaModoEscaneo()
             }
+
+            // Recibe y pinta el Win Rate y PnL Diario
+            if (intent?.action == "ACTUALIZACION_ESTADISTICAS") {
+                val winRateStr = intent.getStringExtra("WIN_RATE") ?: "--%"
+                val dailyPnl = intent.getDoubleExtra("DAILY_PNL", 0.0)
+
+                tvWinRate.text = winRateStr
+
+                val signo = if (dailyPnl > 0) "+" else ""
+                tvDailyPnL.text = "$signo$${"%.2f".format(dailyPnl)}"
+
+                if (dailyPnl > 0) {
+                    tvDailyPnL.setTextColor(ContextCompat.getColor(requireContext(), R.color.neon_green))
+                    tvWinRate.setTextColor(ContextCompat.getColor(requireContext(), R.color.neon_green))
+                } else if (dailyPnl < 0) {
+                    tvDailyPnL.setTextColor(ContextCompat.getColor(requireContext(), R.color.neon_red))
+                    tvWinRate.setTextColor(ContextCompat.getColor(requireContext(), R.color.neon_red))
+                } else {
+                    tvDailyPnL.setTextColor(Color.WHITE)
+                    tvWinRate.setTextColor(Color.WHITE)
+                }
+            }
         }
     }
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View? {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         return inflater.inflate(R.layout.fragment_bot, container, false)
     }
 
@@ -73,7 +91,6 @@ class BotFragment : Fragment() {
         switchBotActive = view.findViewById(R.id.switchBotActive)
         chipStatus = view.findViewById(R.id.chipStatus)
 
-        // Nuevos campos
         tvWinRate = view.findViewById(R.id.tvWinRate)
         tvDailyPnL = view.findViewById(R.id.tvDailyPnL)
 
@@ -83,12 +100,10 @@ class BotFragment : Fragment() {
         tvTradePnL = view.findViewById(R.id.tvTradePnL)
         btnCloseTrade = view.findViewById(R.id.btnCloseTrade)
 
-        // 1. CARGAR SALDO MEMORIA
         val prefs = requireContext().getSharedPreferences("BotConfig", Context.MODE_PRIVATE)
         val savedBalance = prefs.getString("LAST_KNOWN_BALANCE", "0.00")?.toDoubleOrNull() ?: 0.00
         tvTotalBalance.text = "$%.2f".format(savedBalance)
 
-        // 2. SINCRONIZAR ESTADO DEL BOTÓN AL ABRIR
         if (TradingService.isRunning) {
             switchBotActive.isChecked = true
             actualizarEstadoVisual(true)
@@ -97,10 +112,8 @@ class BotFragment : Fragment() {
             actualizarEstadoVisual(false)
         }
 
-        // 3. ESTADO INICIAL DE TARJETA
         cardActiveTrade.visibility = View.VISIBLE
         if (TradingService.posicionAbierta) {
-            // Si cerramos y abrimos la app con operación en curso, restaurar visual
             tvTradeSymbol.text = "POSICIÓN ACTIVA: ${TradingService.monedaConPosicion}"
             tvTradeType.text = TradingService.tipoPosicion
             btnCloseTrade.visibility = View.VISIBLE
@@ -127,10 +140,16 @@ class BotFragment : Fragment() {
             requireContext().sendBroadcast(intent)
         }
 
+        // 🔥 FILTRO ACTUALIZADO PARA ESCUCHAR AMBAS COSAS 🔥
+        val filter = IntentFilter().apply {
+            addAction("ACTUALIZACION_TRADING")
+            addAction("ACTUALIZACION_ESTADISTICAS")
+        }
+
         ContextCompat.registerReceiver(
             requireContext(),
             tradingReceiver,
-            IntentFilter("ACTUALIZACION_TRADING"),
+            filter,
             ContextCompat.RECEIVER_EXPORTED
         )
     }
