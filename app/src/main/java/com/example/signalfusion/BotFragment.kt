@@ -48,6 +48,14 @@ class BotFragment : Fragment() {
                 tvTotalBalance.text = "$%.2f".format(TradingService.currentBalance)
                 if (TradingService.lastRSI != "--") txtRSI.text = TradingService.lastRSI
 
+                // 🔥 NUEVO: Escuchar el ATR 🔥
+                val atrValue = intent.getStringExtra("ATR") ?: "--"
+                if (atrValue != "--") {
+                    // En el XML de diseño lo llamaste txtVolatilidad
+                    val txtVolatilidad: TextView = requireView().findViewById(R.id.txtVolatilidad)
+                    txtVolatilidad.text = atrValue
+                }
+
                 if (tradeOpen) actualizarTarjetaConOperacion(intent)
                 else actualizarTarjetaModoEscaneo()
             }
