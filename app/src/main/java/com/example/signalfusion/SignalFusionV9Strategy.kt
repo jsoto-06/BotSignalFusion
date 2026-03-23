@@ -1,53 +1,64 @@
 package com.example.signalfusion
 
 import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.min
 
 /**
- * 🧠 SIGNAL FUSION V9.4 — SWING 1H MODERADA
+ * 🧠 SIGNAL FUSION V9.6 — FRANCOTIRADOR MTFA
  *
- * CAMBIO DE FILOSOFÍA vs V9.3 (scalping 5m):
+ * CAMBIO ARQUITECTURAL vs V9.5:
  *
- * El scalping en 5m con 10x era matemáticamente imposible:
- *   - Fees 1.2% por trade sobre TP de 1.8% = 67% del profit se va en fees
- *   - Win rate necesario > 55%, real fue 20%
- *   - 30 trades/noche erosionaban capital garantizadamente
+ * Antes: todas las capas usaban el mismo historial (1H)
+ * Ahora: cada capa usa la temporalidad correcta
  *
- * Nueva filosofía — Swing en 1h:
- *   - TP 4.0% / SL 2.0% → R:R 2:1
- *   - Fees 1.2% sobre TP 4.0% = solo 30% del profit en fees
- *   - Win rate necesario > 30% (alcanzable)
- *   - 2-4 trades/día máximo
- *   - MODERADA: exige 2/3 familias → señales más fiables
+ *   CAPA 1 — Régimen HTF (1H):
+ *     Lee EMA200, MACD y BB de velas de 1H
+ *     Determina BULL/BEAR/NEUTRAL con alta fiabilidad
+ *     Solo BULL = solo LONGs · Solo BEAR = solo SHORTs
  *
- * CAMBIOS TÉCNICOS vs V9.3:
- *   - Umbral distToTrend subido a 0.004 (velas 1h tienen más recorrido)
- *   - RSI zonas ajustadas para 1h (menos ruido, señales más limpias)
- *   - MACD expansión umbral bajado a 6% (velas 1h se mueven más despacio)
- *   - minBarsBeforeResignal = 3 barras de 1h = 3 horas mínimo entre señales
+ *   CAPAS 2/3 — Entrada LTF (15m):
+ *     Lee RSI, EMA, MACD de velas de 15m
+ *     Busca el momento exacto de entrada en la dirección del HTF
+ *     2/3 familias en 15m alineadas con HTF = señal válida
+ *
+ *   CAPA 4 — Timing RT (Order Flow):
+ *     Lee trades individuales en tiempo real
+ *     Confirma que el dinero real está entrando en esa dirección
+ *
+ * RESULTADO:
+ *   1H dice "el mercado es bajista" (mapa)
+ *   15m dice "ahora mismo está cayendo con momentum" (lupa)
+ *   Order Flow dice "los vendedores están atacando ahora" (gatillo)
+ *   → ENTRAR SHORT con máxima convicción
  */
 
 data class MarketData(
+    // ── LTF (15m) — para Capas 2 y 3 ──
     val price: Double,
     val high: Double,
     val low: Double,
     val rsi: Double,
     val rsiMA: Double,
-    val emaFast: Double,
-    val emaSlow: Double,
-    val emaMid: Double,
-    val emaTrend: Double,
+    val emaFast: Double,    // EMA 12 en 15m
+    val emaSlow: Double,    // EMA 26 en 15m
+    val emaMid: Double,     // EMA 50 en 15m
+    val emaTrend: Double,   // EMA 200 en 15m (referencia)
     val bbUpper: Double,
     val bbMiddle: Double,
     val bbLower: Double,
     val macdLine: Double,
     val macdSignal: Double,
     val macdHist: Double,
-    val htfEmaFast: Double  = 0.0,
-    val htfEmaTrend: Double = 0.0,
-    val htfMacdHist: Double = 0.0,
-    val htfRsi: Double      = 50.0
+    // ── HTF (1H) — para Capa 1 ──
+    // Siempre deben estar presentes en V9.6
+    val htfEmaFast: Double  = 0.0,   // EMA 12 en 1H
+    val htfEmaSlow: Double  = 0.0,   // EMA 26 en 1H
+    val htfEmaMid: Double   = 0.0,   // EMA 50 en 1H
+    val htfEmaTrend: Double = 0.0,   // EMA 200 en 1H
+    val htfMacdHist: Double = 0.0,   // MACD hist en 1H
+    val htfBbWidth: Double  = 0.0,   // BB width en 1H
+    val htfRsi: Double      = 50.0,  // RSI en 1H
+    // ── Order Flow — para Capa 4 ──
+    val orderFlow: OrderFlowData? = null
 )
 
 enum class MarketRegime { BULL, BEAR, NEUTRAL }
@@ -77,162 +88,163 @@ class TradeStateManager {
     private var consecutiveLosses = 0
     private var lastTradeBar     = 0
     private var pairCooldownBars = 0
-
-    // 3 barras de 1h = 3 horas mínimo entre señales del mismo tipo
     private val minBarsBeforeResignal = 3
 
     fun registerLoss() {
         consecutiveLosses++
-        // Tras 2 pérdidas: bloqueo de 6 barras = 6 horas
         if (consecutiveLosses >= 2) pairCooldownBars = 6
     }
-
-    fun registerWin() {
-        consecutiveLosses  = 0
-        pairCooldownBars   = 0
-    }
-
-    fun registerSignal(currentBar: Int, signalType: String) {
-        lastSignalBar  = currentBar
-        lastSignalType = signalType
-        lastTradeBar   = currentBar
+    fun registerWin() { consecutiveLosses = 0; pairCooldownBars = 0 }
+    fun registerSignal(bar: Int, type: String) {
+        lastSignalBar = bar; lastSignalType = type; lastTradeBar = bar
         if (pairCooldownBars > 0) pairCooldownBars--
     }
-
     fun tickBar() { if (pairCooldownBars > 0) pairCooldownBars-- }
-
-    fun canEnter(currentBar: Int, signalType: String): Pair<Boolean, String> {
-        if (pairCooldownBars > 0)
-            return Pair(false, "Cooldown activo: $pairCooldownBars barras (${consecutiveLosses} pérdidas)")
-        val barsSinceLast = currentBar - lastSignalBar
-        if (barsSinceLast < minBarsBeforeResignal && lastSignalType != null)
-            return Pair(false, "Muy pronto: $barsSinceLast/${minBarsBeforeResignal} barras de 1h")
-        if (lastSignalType == signalType && currentBar - lastTradeBar < 2)
-            return Pair(false, "Re-entrada inmediata bloqueada ($signalType)")
+    fun canEnter(bar: Int, type: String): Pair<Boolean, String> {
+        if (pairCooldownBars > 0) return Pair(false, "Cooldown $pairCooldownBars barras")
+        val since = bar - lastSignalBar
+        if (since < minBarsBeforeResignal && lastSignalType != null)
+            return Pair(false, "Muy pronto: $since/${minBarsBeforeResignal} barras LTF")
+        if (lastSignalType == type && bar - lastTradeBar < 2)
+            return Pair(false, "Re-entrada inmediata bloqueada ($type)")
         return Pair(true, "OK")
     }
 }
 
 // ─────────────────────────────────────────────
-// ESTRATEGIA PRINCIPAL V9.4
+// ESTRATEGIA PRINCIPAL V9.6
 // ─────────────────────────────────────────────
 
 class SignalFusionV9Strategy(
-    private val timeframe: String = "1h",
-    private val mode: String     = "MODERADA",
-    private val useHTF: Boolean  = false
+    private val ltfTimeframe: String = "15m",  // LTF para entrada
+    private val htfTimeframe: String = "1h",   // HTF para dirección
+    private val mode: String         = "MODERADA"
 ) {
-    val name = "SignalFusion V9.4 — Swing 1H 🎯"
+    val name = "SignalFusion V9.6 — MTFA Francotirador 🎯"
 
     private val stateManager = TradeStateManager()
     private var currentBar   = 0
 
-    private var prevMacdHist    = 0.0
-    private var prevRsi         = 50.0
-    private var prevEmaFast     = 0.0
-    private var prevEmaSlow     = 0.0
-    private var prevPrice       = 0.0
+    // Memoria de la vela LTF anterior
+    private var prevMacdHist = 0.0
+    private var prevRsi      = 50.0
+    private var prevEmaFast  = 0.0
+    private var prevEmaSlow  = 0.0
+    private var candlesSeen  = 0
+
+    // Memoria de la vela HTF anterior
     private var prevHtfMacdHist = 0.0
-    private var candlesSeen     = 0
+    private var prevHtfEmaFast  = 0.0
 
     // ─────────────────────────────────────────
-    // CAPA 1: RÉGIMEN DE MERCADO
+    // CAPA 1: RÉGIMEN HTF (1H)
+    // Lee exclusivamente los datos de 1H para determinar la tendencia
     // ─────────────────────────────────────────
 
     private fun evaluateRegime(data: MarketData): Pair<MarketRegime, String> {
-        // V9.4: umbral 0.004 (antes 0.003) — velas 1h tienen más recorrido
-        val distToTrend    = (data.price - data.emaTrend) / data.price
-        val isAboveTrend   = distToTrend > 0.004
-        val isBelowTrend   = distToTrend < -0.004
-        val emaAlignedBull = data.emaFast > data.emaSlow && data.emaSlow > data.emaMid
-        val emaAlignedBear = data.emaFast < data.emaSlow && data.emaSlow < data.emaMid
 
-        // BB squeeze: en 1h el umbral sube a 0.008 (las BB son más anchas)
-        val bbWidth   = (data.bbUpper - data.bbLower) / data.bbMiddle
-        val isRanging = bbWidth < 0.008
+        // Si no hay datos HTF reales, usar LTF como fallback (modo degradado)
+        val hasHtfData = data.htfEmaTrend > 0.0
 
-        val htfBull: Boolean
-        val htfBear: Boolean
-        if (useHTF && data.htfEmaTrend > 0.0) {
-            htfBull = data.htfEmaFast > data.htfEmaTrend && data.htfMacdHist > 0
-            htfBear = data.htfEmaFast < data.htfEmaTrend && data.htfMacdHist < 0
-        } else {
-            // Sin HTF real: proxy con pendiente de EMA200
-            htfBull = distToTrend > 0.008
-            htfBear = distToTrend < -0.008
+        if (!hasHtfData) {
+            // Fallback: usar EMA200 del LTF con umbral más estricto
+            val dist = (data.price - data.emaTrend) / data.price
+            val bbWidth = (data.bbUpper - data.bbLower) / data.bbMiddle
+            if (bbWidth < 0.005) return Pair(MarketRegime.NEUTRAL, "BB squeeze LTF (fallback)")
+            return when {
+                dist > 0.005 && data.emaFast > data.emaSlow -> Pair(MarketRegime.BULL, "Bull LTF fallback")
+                dist < -0.005 && data.emaFast < data.emaSlow -> Pair(MarketRegime.BEAR, "Bear LTF fallback")
+                else -> Pair(MarketRegime.NEUTRAL, "Sin tendencia LTF (fallback)")
+            }
         }
 
-        if (isRanging) return Pair(MarketRegime.NEUTRAL, "BB squeeze (width=${String.format("%.4f", bbWidth)})")
+        // ── Análisis HTF real (1H) ──
 
-        val bullScore = (if (isAboveTrend) 1 else 0) + (if (emaAlignedBull) 1 else 0) + (if (htfBull) 1 else 0)
-        val bearScore = (if (isBelowTrend) 1 else 0) + (if (emaAlignedBear) 1 else 0) + (if (htfBear) 1 else 0)
+        // BB width en 1H — squeeze = mercado en rango, no operar
+        if (data.htfBbWidth > 0.0 && data.htfBbWidth < 0.008) {
+            return Pair(MarketRegime.NEUTRAL, "BB squeeze 1H (width=${String.format("%.4f", data.htfBbWidth)})")
+        }
+
+        // Distancia al EMA200 en 1H
+        val distHtf = (data.price - data.htfEmaTrend) / data.price
+        val isAboveHtfTrend = distHtf > 0.003
+        val isBelowHtfTrend = distHtf < -0.003
+
+        // Alineación EMAs en 1H
+        val htfEmasBull = data.htfEmaFast > data.htfEmaSlow &&
+                data.htfEmaSlow > data.htfEmaMid
+        val htfEmasBear = data.htfEmaFast < data.htfEmaSlow &&
+                data.htfEmaSlow < data.htfEmaMid
+
+        // MACD en 1H positivo/negativo
+        val htfMacdBull = data.htfMacdHist > 0
+        val htfMacdBear = data.htfMacdHist < 0
+
+        val bullScore = (if (isAboveHtfTrend) 1 else 0) +
+                (if (htfEmasBull) 1 else 0) +
+                (if (htfMacdBull) 1 else 0)
+
+        val bearScore = (if (isBelowHtfTrend) 1 else 0) +
+                (if (htfEmasBear) 1 else 0) +
+                (if (htfMacdBear) 1 else 0)
 
         return when {
-            bullScore >= 2 && bullScore > bearScore -> Pair(MarketRegime.BULL, "Bull ($bullScore/3)")
-            bearScore >= 2 && bearScore > bullScore -> Pair(MarketRegime.BEAR, "Bear ($bearScore/3)")
-            else -> Pair(MarketRegime.NEUTRAL, "Sin tendencia clara (bull=$bullScore bear=$bearScore)")
+            bullScore >= 2 && bullScore > bearScore ->
+                Pair(MarketRegime.BULL, "Bull 1H ($bullScore/3) dist=${String.format("%.3f", distHtf * 100)}%")
+            bearScore >= 2 && bearScore > bullScore ->
+                Pair(MarketRegime.BEAR, "Bear 1H ($bearScore/3) dist=${String.format("%.3f", distHtf * 100)}%")
+            else ->
+                Pair(MarketRegime.NEUTRAL, "Sin tendencia 1H (bull=$bullScore bear=$bearScore)")
         }
     }
 
     // ─────────────────────────────────────────
-    // CAPA 2: VOTACIÓN POR FAMILIAS
+    // CAPA 2: FAMILIAS LTF (15m)
+    // Lee los indicadores de 15m para timing de entrada
     // ─────────────────────────────────────────
 
     private fun evaluateFamilies(data: MarketData): FamilyVote {
         val hasPrev = candlesSeen >= 2
 
-        // ── FAMILIA RSI ──
-        // V9.4: en 1h el RSI tiene más rango útil
-        // LONG: RSI recuperando desde zona 35-55 con momentum
-        // SHORT: RSI cayendo desde zona 45-65 con momentum
+        // RSI 15m — momentum vela-a-vela en LTF
         val rsiVote = when {
             hasPrev && data.rsi in 35.0..55.0
                     && data.rsi > prevRsi + 1.5
                     && data.rsi > data.rsiMA -> "LONG"
-
             hasPrev && data.rsi < 35.0
                     && data.rsi > prevRsi
                     && data.rsi > data.rsiMA -> "LONG"
-
             hasPrev && data.rsi in 45.0..65.0
                     && data.rsi < prevRsi - 1.5
                     && data.rsi < data.rsiMA -> "SHORT"
-
             hasPrev && data.rsi > 65.0
                     && data.rsi < prevRsi
                     && data.rsi < data.rsiMA -> "SHORT"
-
             else -> "NEUTRAL"
         }
 
-        // ── FAMILIA EMA ──
-        val emaCrossUp   = hasPrev && prevEmaFast < prevEmaSlow && data.emaFast >= data.emaSlow
-        val emaCrossDown = hasPrev && prevEmaFast > prevEmaSlow && data.emaFast <= data.emaSlow
+        // EMA 15m — cruces y alineación en LTF
+        val crossUp   = hasPrev && prevEmaFast < prevEmaSlow && data.emaFast >= data.emaSlow
+        val crossDown = hasPrev && prevEmaFast > prevEmaSlow && data.emaFast <= data.emaSlow
         val emaVote = when {
-            emaCrossUp -> "LONG"
+            crossUp -> "LONG"
             data.emaFast > data.emaSlow && data.emaSlow > data.emaMid
                     && data.price > data.emaFast * 1.001 -> "LONG"
-            emaCrossDown -> "SHORT"
+            crossDown -> "SHORT"
             data.emaFast < data.emaSlow && data.emaSlow < data.emaMid
                     && data.price < data.emaFast * 0.999 -> "SHORT"
             else -> "NEUTRAL"
         }
 
-        // ── FAMILIA MACD ──
-        // Sin fallback estático — solo cruces y expansión real vela-a-vela
-        // V9.4: umbral expansión 6% (antes 8%) — velas 1h se mueven más despacio
-        val macdCrossUp       = hasPrev && data.macdLine >  data.macdSignal
-                && data.macdHist > 0 && prevMacdHist <= 0
-        val macdCrossDown     = hasPrev && data.macdLine <  data.macdSignal
-                && data.macdHist < 0 && prevMacdHist >= 0
-        val macdExpandingUp   = hasPrev && data.macdHist > 0 && prevMacdHist > 0
-                && data.macdHist > prevMacdHist * 1.06
-        val macdExpandingDown = hasPrev && data.macdHist < 0 && prevMacdHist < 0
-                && data.macdHist < prevMacdHist * 1.06
+        // MACD 15m — cruce y expansión vela-a-vela en LTF
+        val macdCrossUp   = hasPrev && data.macdLine > data.macdSignal && data.macdHist > 0 && prevMacdHist <= 0
+        val macdCrossDown = hasPrev && data.macdLine < data.macdSignal && data.macdHist < 0 && prevMacdHist >= 0
+        val macdExpUp     = hasPrev && data.macdHist > 0 && prevMacdHist > 0 && data.macdHist > prevMacdHist * 1.06
+        val macdExpDown   = hasPrev && data.macdHist < 0 && prevMacdHist < 0 && data.macdHist < prevMacdHist * 1.06
 
         val macdVote = when {
-            macdCrossUp   || macdExpandingUp   -> "LONG"
-            macdCrossDown || macdExpandingDown -> "SHORT"
+            macdCrossUp || macdExpUp     -> "LONG"
+            macdCrossDown || macdExpDown -> "SHORT"
             else -> "NEUTRAL"
         }
 
@@ -240,31 +252,32 @@ class SignalFusionV9Strategy(
     }
 
     // ─────────────────────────────────────────
-    // CAPA 3: TRIGGER DE ENTRADA
+    // CAPA 3: TRIGGER LTF (15m)
     // ─────────────────────────────────────────
 
     private fun checkTrigger(data: MarketData, direction: String): Pair<Boolean, String> {
         return when (direction) {
-            "LONG" -> {
-                val priceAboveEmaFast = data.price > data.emaFast
-                val macdPositive      = data.macdHist > 0
-                when {
-                    !priceAboveEmaFast -> Pair(false, "Precio bajo EMA rápida")
-                    !macdPositive      -> Pair(false, "MACD negativo")
-                    else               -> Pair(true,  "Trigger LONG ✅")
-                }
+            "LONG" -> when {
+                data.price <= data.emaFast -> Pair(false, "Precio bajo EMA rápida 15m")
+                data.macdHist <= 0         -> Pair(false, "MACD 15m negativo")
+                else                       -> Pair(true,  "Trigger LONG 15m ✅")
             }
-            "SHORT" -> {
-                val priceBelowEmaFast = data.price < data.emaFast
-                val macdNegative      = data.macdHist < 0
-                when {
-                    !priceBelowEmaFast -> Pair(false, "Precio sobre EMA rápida")
-                    !macdNegative      -> Pair(false, "MACD positivo")
-                    else               -> Pair(true,  "Trigger SHORT ✅")
-                }
+            "SHORT" -> when {
+                data.price >= data.emaFast -> Pair(false, "Precio sobre EMA rápida 15m")
+                data.macdHist >= 0         -> Pair(false, "MACD 15m positivo")
+                else                       -> Pair(true,  "Trigger SHORT 15m ✅")
             }
             else -> Pair(false, "Sin dirección")
         }
+    }
+
+    // ─────────────────────────────────────────
+    // CAPA 4: ORDER FLOW (tiempo real)
+    // ─────────────────────────────────────────
+
+    private fun checkOrderFlow(data: MarketData, direction: String): Pair<Boolean, String> {
+        val of = data.orderFlow ?: return Pair(true, "OF no disponible — permitido")
+        return OrderFlowAnalyzer().confirmSignal(direction, of)
     }
 
     // ─────────────────────────────────────────
@@ -275,46 +288,52 @@ class SignalFusionV9Strategy(
         currentBar++
         stateManager.tickBar()
 
+        // CAPA 1 — HTF
         val (regime, regimeReason) = evaluateRegime(data)
         if (regime == MarketRegime.NEUTRAL) {
             if (isNewCandle) updateMemory(data)
             return SignalResult("NEUTRAL", regime,
-                FamilyVote("NEUTRAL","NEUTRAL","NEUTRAL"), 0, false,
-                "Capa 1 - NEUTRAL: $regimeReason")
+                FamilyVote("N","N","N"), 0, false,
+                "Capa 1 HTF - NEUTRAL: $regimeReason")
         }
 
-        val votes            = evaluateFamilies(data)
-        val allowedDirection = if (regime == MarketRegime.BULL) "LONG" else "SHORT"
-        val confirmations    = listOf(votes.rsiVote, votes.emaVote, votes.macdVote)
-            .count { it == allowedDirection }
+        // CAPA 2 — LTF
+        val votes = evaluateFamilies(data)
+        val dir   = if (regime == MarketRegime.BULL) "LONG" else "SHORT"
+        val confs = listOf(votes.rsiVote, votes.emaVote, votes.macdVote).count { it == dir }
+        val minC  = if (mode == "AGRESIVA") 1 else 2
 
-        // MODERADA: exige 2/3 familias — señales más fiables que AGRESIVA
-        val minConfirmations = if (mode == "AGRESIVA") 1 else 2
-
-        if (confirmations < minConfirmations) {
+        if (confs < minC) {
             if (isNewCandle) updateMemory(data)
-            return SignalResult("NEUTRAL", regime, votes, confirmations, false,
-                "Capa 2 - $confirmations/$minConfirmations ($allowedDirection) " +
-                        "RSI=${votes.rsiVote} EMA=${votes.emaVote} MACD=${votes.macdVote}")
+            return SignalResult("NEUTRAL", regime, votes, confs, false,
+                "Capa 2 LTF - $confs/$minC ($dir) RSI=${votes.rsiVote} EMA=${votes.emaVote} MACD=${votes.macdVote}")
         }
 
-        val (triggerOk, triggerReason) = checkTrigger(data, allowedDirection)
-        if (!triggerOk) {
+        // CAPA 3 — LTF trigger
+        val (trigOk, trigReason) = checkTrigger(data, dir)
+        if (!trigOk) {
             if (isNewCandle) updateMemory(data)
-            return SignalResult("NEUTRAL", regime, votes, confirmations, false,
-                "Capa 3 - $triggerReason")
+            return SignalResult("NEUTRAL", regime, votes, confs, false, "Capa 3 LTF - $trigReason")
         }
 
-        val (canEnter, enterReason) = stateManager.canEnter(currentBar, allowedDirection)
+        // CAPA 4 — Order Flow
+        val (ofOk, ofReason) = checkOrderFlow(data, dir)
+        if (!ofOk) {
+            if (isNewCandle) updateMemory(data)
+            return SignalResult("NEUTRAL", regime, votes, confs, true,
+                "Capa 4 OF - $ofReason")
+        }
+
+        // Estado
+        val (canEnter, enterReason) = stateManager.canEnter(currentBar, dir)
         if (!canEnter) {
             if (isNewCandle) updateMemory(data)
-            return SignalResult("NEUTRAL", regime, votes, confirmations, true,
-                "Estado - $enterReason")
+            return SignalResult("NEUTRAL", regime, votes, confs, true, "Estado - $enterReason")
         }
 
-        stateManager.registerSignal(currentBar, allowedDirection)
+        stateManager.registerSignal(currentBar, dir)
         if (isNewCandle) updateMemory(data)
-        return SignalResult(allowedDirection, regime, votes, confirmations, true, "OK")
+        return SignalResult(dir, regime, votes, confs, true, "OK — $ofReason")
     }
 
     fun reportResult(wasWin: Boolean) {
@@ -326,38 +345,21 @@ class SignalFusionV9Strategy(
         prevRsi         = data.rsi
         prevEmaFast     = data.emaFast
         prevEmaSlow     = data.emaSlow
-        prevPrice       = data.price
         prevHtfMacdHist = data.htfMacdHist
+        prevHtfEmaFast  = data.htfEmaFast
         candlesSeen++
     }
 }
 
 // ─────────────────────────────────────────────
-// PARÁMETROS V9.4 — SWING 1H
+// PARÁMETROS
 // ─────────────────────────────────────────────
 
-/**
- * Matemática de rentabilidad con estos parámetros:
- *
- * Fees por trade: 0.06% apertura + 0.06% cierre × 5x = 0.6%
- * TP neto real:   4.0% - 0.6% fees = 3.4%
- * SL neto real:  -2.0% - 0.6% fees = -2.6%
- * R:R real:       3.4 / 2.6 = 1.31:1
- *
- * Con win rate 40%:
- *   (0.40 × 3.4) - (0.60 × 2.6) = 1.36 - 1.56 = -0.20% → break-even ~40%
- *
- * Con win rate 45%:
- *   (0.45 × 3.4) - (0.55 × 2.6) = 1.53 - 1.43 = +0.10% por trade ✅
- *
- * Break-even mínimo: ~41% win rate
- * Objetivo realista: 45-55% con MODERADA en 1h
- */
 object V9TradingParams {
-    const val TP_SCALPING         = 4.0   // antes 1.8 — target alcanzable en 1h
-    const val SL_SCALPING         = 2.0   // antes 1.5 — SL respirable en 1h
-    const val TRAILING_ACTIVATION = 3.0   // antes 1.4 — activar trailing en 3%
-    const val TRAILING_CALLBACK   = 1.0   // antes 0.6 — cerrar si retrocede 1%
+    const val TP_SCALPING         = 4.0
+    const val SL_SCALPING         = 2.0
+    const val TRAILING_ACTIVATION = 3.0
+    const val TRAILING_CALLBACK   = 1.0
     const val TP_SWING            = 6.0
     const val SL_SWING            = 2.5
 }
