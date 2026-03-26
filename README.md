@@ -1,187 +1,142 @@
-# SignalFusion Pro — Bot de Trading Algorítmico para Android
+# SignalFusion Pro — Bot de Trading Algorítmico para Android 🎯
 
-> Bot de futuros para Bitget construido nativamente en Kotlin para Android. Opera en modo DEMO y REAL sobre contratos USDT-M perpetuos con gestión de riesgo automática.
+> Bot de futuros para Bitget construido nativamente en Kotlin para Android. Opera en modo DEMO y REAL sobre contratos USDT-M perpetuos. Evolucionado a un sistema de "Francotirador" que combina Análisis de Múltiples Temporalidades (MTFA) y Flujo de Órdenes (Order Flow) en tiempo real.
 
 ---
 
-## Estado actual — V9.4 Swing 1H
+## Estado actual — V9.6 MTFA Francotirador + Order Flow
 
 | Parámetro | Valor |
 |-----------|-------|
-| Versión | V9.4 |
-| Timeframe | 1h |
-| Estrategia | MODERADA (2/3 familias) |
+| Versión | V9.6 |
+| Timeframes | **HTF:** 1H (Dirección) / **LTF:** 15m (Entrada) |
+| Estrategia | MODERADA (2/3 familias en LTF) |
 | Apalancamiento | 5x |
 | Take Profit | 4.0% |
 | Stop Loss | 2.0% |
 | Ratio R:R | 2.0:1 |
 | Trailing activación | 3.0% |
 | Trailing callback | 1.0% |
-| Cooldown base | 60 min (escala con pérdidas) |
-| Horario | 24h — filtro por ATR mínimo 0.3% |
-| Monedas | BTC por defecto (ETH opcional) |
+| Cooldown base | 20 min tras win/apertura (escala severamente con pérdidas) |
+| Monedas | BTC por defecto (Recomendado para Order Flow limpio) |
 
 ---
 
-## Arquitectura — Sistema de 3 Capas de Veto
+## Arquitectura — Sistema de 4 Capas (3D Trading)
 
-El motor V9.4 evalúa cada señal pasando por tres capas de validación independientes. Si una capa veta, no se analiza la siguiente.
+El motor V9.6 evalúa el mercado en 3 dimensiones de tiempo distintas (Horas, Minutos, Segundos). Si una capa veta, la señal se descarta automáticamente.
 
-### Capa 1 — Régimen de Mercado (veto absoluto)
+### 🗺️ Capa 1 — Régimen HTF (1 Hora)
+Actúa como la brújula del bot. Lee exclusivamente los datos macro para determinar la tendencia principal y bloquear operaciones en contra de la marea.
+- **BULL**: Precio > EMA200 (1H), EMAs alineadas al alza, MACD (1H) alcista → solo LONGs.
+- **BEAR**: Precio < EMA200 (1H), EMAs alineadas a la baja, MACD (1H) bajista → solo SHORTs.
+- **NEUTRAL**: BB squeeze en 1H o sin tendencia clara → Se bloquea cualquier trade.
 
-Determina si el mercado está en tendencia o en rango lateral. Si está en rango, no se opera.
+### 🔬 Capa 2 — Votación por Familias LTF (15 Minutos)
+Actúa como la lupa. Busca el "timing" perfecto de entrada a favor de la tendencia de 1H. Requiere que 2 de 3 familias confirmen:
+- **RSI (14)**: Momentum vela-a-vela cruzando su Media Móvil.
+- **EMA**: Cruces EMA12/EMA26 o alineación perfecta en 15m.
+- **MACD**: Cruces de señal o expansión de histograma (>6%) en 15m.
 
-- **BULL**: precio > EMA200, EMAs alineadas al alza, HTF proxy alcista → solo LONGs
-- **BEAR**: precio < EMA200, EMAs alineadas a la baja, HTF proxy bajista → solo SHORTs
-- **NEUTRAL**: BB squeeze o sin tendencia clara → ningún trade
+### 🎯 Capa 3 — Trigger LTF (15 Minutos)
+Última validación técnica antes del Order Flow:
+- El precio debe estar del lado correcto de la EMA rápida (15m).
+- El MACD histograma (15m) debe acompañar la dirección.
 
-### Capa 2 — Votación por Familias
-
-Tres familias de indicadores votan de forma independiente. En modo MODERADA se necesitan 2/3 para confirmar.
-
-- **RSI (14)**: vota cuando hay momentum claro vela-a-vela comparado con RSI MA (7)
-- **EMA**: vota por cruces EMA12/EMA26 o alineación perfecta con precio
-- **MACD**: vota por cruces de señal o expansión del histograma entre velas consecutivas
-
-### Capa 3 — Trigger de Entrada
-
-Última validación antes de abrir posición:
-- Precio debe estar al lado correcto de la EMA rápida
-- MACD histograma debe confirmar la dirección
+### ⚡ Capa 4 — Order Flow (Tiempo Real)
+El guardián definitivo. Se conecta al endpoint `/api/v2/mix/market/fills` para leer los últimos 500 trades reales cruzados en el exchange (Tickers).
+- **Evita Absorciones**: Bloquea SHORTs si el precio cae pero el *Buy Ratio* y el Delta muestran compras masivas.
+- **Divergencia CVD**: Bloquea entradas si el precio se mueve sin el respaldo del *Cumulative Volume Delta*.
+- **Confirmación**: Solo permite disparar si el Smart Money está atacando en la misma dirección que las capas 1 y 2.
 
 ---
 
 ## Gestión de Riesgo
 
-**Tamaño de posición** calculado como porcentaje del balance disponible:
+**Tamaño de posición** calculado como porcentaje del balance disponible (con protección de capital):
 
 | Balance | Margen por trade |
 |---------|-----------------|
 | < $100 | 5% del balance |
-| $100 – $2,000 | 4% del balance |
-| > $2,000 | Configurable (default 5%) |
+| < $2,000 | 4% del balance |
+| > $2,000 | Configurable (default 10% / 5%) |
 
-**Cooldown escalado tras pérdidas:**
+**Cooldown escalado dinámico:**
 
-| Pérdidas consecutivas | Cooldown |
-|-----------------------|---------|
-| 0 (win o arranque) | 60 min |
-| 1 pérdida | 90 min |
-| 2 pérdidas | 120 min |
-| 3 pérdidas | 150 min |
+| Evento | Cooldown |
+|--------|---------|
+| Tras Win / Apertura | 20 minutos |
+| 1 Pérdida | 90 min (60 + 30) |
+| 2 Pérdidas consecutivas | 120 min |
+| 3 Pérdidas consecutivas | 150 min |
 
-El cooldown **persiste entre reinicios** del servicio — se guarda en SharedPreferences y se restaura automáticamente al arrancar.
+El cooldown **persiste entre reinicios** del dispositivo mediante `SharedPreferences`.
 
 ---
 
 ## Indicadores calculados nativamente
 
-Todos los indicadores se calculan sobre las velas descargadas via API, sin librerías externas:
+Todos los indicadores se calculan en memoria RAM sin librerías externas para máxima velocidad:
 
-- **RSI (14)** + **RSI MA (7)** — momentum y cruces
-- **MACD (12, 26, 9)** — línea, señal e histograma
-- **Bollinger Bands (20, 2.0)** — squeeze y régimen lateral
-- **EMA 12** (rápida), **EMA 26** (lenta), **EMA 50** (soporte dinámico), **EMA 200** (filtro de tendencia)
-- **ATR (14)** — volatilidad mínima exigida: 0.3% en 1h
-
----
-
-
+- **Indicadores de Precio (Dual: 15m y 1H)**: RSI, MACD, Bollinger Bands, EMA (12, 26, 50, 200), ATR.
+- **Métricas Order Flow (Real-Time)**:
+  - `Delta` = Volumen Compras - Volumen Ventas
+  - `CVD (Cumulative Volume Delta)` = Suma de deltas recientes
+  - `Buy Ratio %` = Porcentaje de dominancia compradora
+  - `Absorption` = Divergencia micro entre precio y agresividad de mercado.
 
 ---
 
 ## Configuración inicial
 
 ### 1. API Key de Bitget
+Crea una API Key en Bitget con permisos de **Lectura** y **Trade (Futuros)**. Introduce las credenciales en la pestaña Ajustes.
 
-Crea una API Key en Bitget con permisos de **Lectura** y **Trade (Futuros)**. No habilites permisos de retiro. Introduce las credenciales en la pestaña Ajustes de la app.
-
-### 2. Parámetros en la app
-
-- Timeframe → `1h`
-- Estrategia → `MODERADA`
-- Monedas → `BTC` (desactiva ETH y XRP hasta validar resultados)
-- Modo → `DEMO` hasta acumular 30+ trades con win rate positivo
-
-### 3. Optimización Android obligatoria
-
-El bot corre como `ForegroundService`. Para que Android no lo mate en segundo plano:
-
-```
-Ajustes → Aplicaciones → SignalFusion → Batería → Sin restricciones
-```
-
-Habilita notificaciones de la app para recibir alertas de trades en tiempo real.
-
----
-
-## Modo DEMO vs REAL
-
-El bot detecta automáticamente el modo según `BitgetConfig`. En DEMO los símbolos tienen prefijo `S` (por ejemplo `SBTCSUSDT`). El `productType` cambia de `USDT-FUTURES` a `SUSDT-FUTURES`.
-
-Para cambiar de modo edita `BitgetConfig.kt` o usa el selector en Ajustes si está implementado en tu versión de la UI.
-
----
+### 2. Optimización Android obligatoria
+El bot corre como `ForegroundService` y mantiene conexiones WebSocket/HTTP activas. Para que Android (Doze Mode) no lo mate en segundo plano:
 
 ## Cómo interpretar el Logcat
 
-Filtra por `BOT_DEBUG` en Android Studio para ver solo los logs del bot:
+Filtra por `BOT_DEBUG` en Android Studio para entender la mente del "Francotirador":
 
-| Mensaje | Significado |
-|---------|-------------|
-| `✅ MOTOR V9.4 DEMO` | Bot iniciado correctamente |
-| `✅ SBTCSUSDT: 200 velas cargadas` | Historial descargado, bot calibrado |
-| `🚫 Capa 1 - NEUTRAL: BB squeeze` | Mercado en rango, esperando tendencia |
-| `🚫 Capa 2 - 1/2 (SHORT) RSI=NEUTRAL EMA=SHORT MACD=NEUTRAL` | Falta una familia para confirmar — normal |
-| `✅✅✅ SEÑAL V9.4: SHORT en BTCUSDT` | Señal válida, abriendo posición |
-| `🛡️ Trailing: Max 3.20% → 2.10%` | Trailing stop activado |
-| `🏁 CERRADO | PnL: +1.85%` | Trade cerrado con resultado |
-| `⏳ Cooldown 58min` | En espera entre trades |
+| Mensaje de Log | Significado |
+|----------------|-------------|
+| `🗺️ HTF: 1H (dirección) \| 🔬 LTF: 15m (entrada) \| ⚡ OF: tiempo real` | Arquitectura MTFA inicializada correctamente. |
+| `📡 Velas 15m: SBTCSUSDT` <br> `📡 Velas 1H: SBTCSUSDT` | Descargando y separando memorias HTF y LTF. |
+| `📊 [BTCUSDT] OF: BUYERS CVD=UP buy=84% abs=true` | Order Flow detecta compras masivas y absorción bajista. |
+| `🚫 Capa 1 HTF - NEUTRAL: Sin tendencia` | La marea general (1H) no está clara. Botón de disparo bloqueado. |
+| `🚫 Capa 2 LTF - 0/2 (LONG) RSI=NEUTRAL` | Tendencia de 1H clara, pero sin momentum en 15m para entrar. |
+| `✅✅✅ SEÑAL V9.6 MTFA: SHORT en BTCUSDT` | Alineación perfecta: 1H bajista + 15m confirmando + OF atacando. |
 
 ---
 
 ## Historial de versiones
 
-### V9.4 — Swing 1H (actual)
-- Cambio de filosofía: de scalping 5m a swing 1h
-- Leverage reducido de 10x a 5x
-- TP 4.0% / SL 2.0% — ratio R:R 2:1 matemáticamente viable
-- Modo MODERADA por defecto — exige 2/3 familias
-- Cooldown base aumentado a 60 minutos
-- Opera 24h con ATR como único filtro de mercado dormido
-- Solo BTC por defecto — menor spread en DEMO
+### V9.6 — MTFA Francotirador (Actual)
+- Implementación de Análisis de Múltiples Temporalidades (MTFA).
+- Carga dual asíncrona de historiales de velas (`ltfPreciosMap` 15m y `htfPreciosMap` 1H).
+- Capa 1 ahora usa exclusivamente la temporalidad de 1H para blindar la dirección.
 
-### V9.3 — Filtered MACD
-- Eliminado `macdStaticLong/Short` que causaba entradas en cualquier condición
-- Cooldown persistente en SharedPreferences
-- Fix coma locale español en `lastPrice.toDoubleOrNull()`
-- Cooldown escalado dinámicamente tras pérdidas consecutivas
+### V9.5 — Order Flow Layer
+- Introducción de la Capa 4 de lectura de Cinta (Tape Reading).
+- Parser en tiempo real del endpoint de `fills`.
+- Algoritmo matemático para Delta, CVD, Divergencias y Detección de Absorción institucional.
 
-### V9.2 — Candle-Sync Fix
-- Fix crítico: `evaluate()` recibe `isNewCandle: Boolean`
-- `updateMemory()` solo se llama cuando llega una vela nueva real
-- Eliminados falsos cruces causados por evaluaciones cada 3 segundos con el mismo historial
+### V9.4 — Swing Trading
+- Cambio de filosofía: paso de scalping (ruido) a Swing Trading (tendencia).
+- Apalancamiento reducido de 10x a 5x para minimizar impacto de fees.
+- Ajuste de R:R matemático a 2.0:1 (TP 4.0% / SL 2.0%).
 
-### V9.1 — RSI Zones Fix
-- Zonas RSI corregidas para régimen BULL: votaba LONG solo con RSI < 38, que nunca ocurría en tendencia alcista
-- BB squeeze relajado de 0.010 a 0.005
-- SL subido de 0.9% a 1.5% para sobrevivir spread del modo DEMO
-
-### V9.0 — Sistema de 3 Capas
-- Arquitectura nueva: Régimen → Familias → Trigger
-- Basado en análisis real de 26 operaciones (marzo 2026)
-- `TradeStateManager` para cooldown por barras entre señales
-
-### V8 y anteriores
-- Motor de scoring aditivo con sesgos fijos
-- Reemplazado por sistema de veto independiente por familias
+### V9.3 y anteriores
+- Corrección de bugs de Locale (parseo de comas).
+- Persistencia de cooldown en disco para sobrevivir a reinicios de Android.
+- Sistema fundacional de 3 Capas de veto.
 
 ---
 
 ## Disclaimer
 
-El trading de futuros de criptomonedas conlleva riesgo elevado de pérdida de capital. SignalFusion Pro es una herramienta algorítmica con fines educativos y experimentales. Opera exclusivamente bajo tu propia responsabilidad. Valida siempre en modo DEMO antes de usar capital real.
+El trading de futuros de criptomonedas conlleva riesgo elevado de pérdida de capital. **SignalFusion Pro** es una herramienta algorítmica con fines educativos y de investigación tecnológica. Opera exclusivamente bajo tu propia responsabilidad. Valida siempre el Order Flow en modo DEMO antes de exponer capital real al mercado.
 
 ---
-
 *Desarrollado por [@jsoto-06](https://github.com/jsoto-06)*
