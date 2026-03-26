@@ -1,90 +1,187 @@
-# 🚀 SignalFusion Pro v7.2 (Institutional Sniper Edition)
+# SignalFusion Pro — Bot de Trading Algorítmico para Android
 
-> **El Motor Cuantitativo Institucional para Futuros de Bitget (USDT-M)**
-
-SignalFusion Pro ha evolucionado a su forma definitiva. La versión 7.2 deja atrás los condicionales básicos y los sesgos fijos para introducir un **Sistema de Scoring Cuantitativo** avanzado y una **Gestión de Riesgo Matemática Inquebrantable**. Diseñado nativamente para Android (Kotlin), este bot ejecuta análisis técnico pesado en segundo plano, ponderando múltiples indicadores para tomar decisiones de trading con precisión quirúrgica (Modo Francotirador) y protegiendo el capital de forma estricta.
+> Bot de futuros para Bitget construido nativamente en Kotlin para Android. Opera en modo DEMO y REAL sobre contratos USDT-M perpetuos con gestión de riesgo automática.
 
 ---
 
-## 💎 Arquitectura y Características Exclusivas
+## Estado actual — V9.4 Swing 1H
 
-### 🧠 Motor de Inferencia (Scoring System Dinámico)
-El corazón de la v7.2. El bot ya no dispara por un simple cruce de RSI ni tiene un sesgo predefinido. Ahora evalúa el mercado asignando un **puntaje ponderado** basado en la temporalidad (Timeframe). 
-* Suma puntos por rebotes en Bandas de Bollinger, cruces de MACD, alineación de medias móviles (EMAs) y RSI. 
-* Adapta su sesgo (Bullish/Bearish) dependiendo de si el precio está por encima o por debajo de la EMA de 200 períodos.
-
-### 🛡️ Gestión de Riesgo Institucional (NUEVO v7.2)
-Se acabó el riesgo descontrolado o los errores de configuración. El algoritmo ahora tiene un "seguro de vida" interno codificado para garantizar rentabilidad a largo plazo:
-* **Ratio Riesgo/Beneficio 2.4 a 1:** El bot impone matemáticamente un Stop Loss del `2.6%` y un Take Profit del `6.0%`. Arriesgas 1 para ganar más de 2.
-* **Bypass de Margen Dinámico:** Diseñado para levantar cuentas pequeñas. Dependiendo de tu saldo, inyecta un porcentaje u otro para cumplir los mínimos del exchange sin sobreapalancarte (Ej: Si tienes <$20, inyecta máx $4.00 reales).
-* **Filtro Anti-Ruido (ATR Estricto):** Exige una volatilidad mínima del `1.2%`. Si el mercado está lateral o aburrido, el bot se bloquea automáticamente para no quemar comisiones.
-
-### ⚡ Trailing Stop Súper Agresivo
-Para cuentas pequeñas, vale más pájaro en mano. El bot activa un escudo dinámico en cuanto la operación alcanza un **+1.5%** de ganancia. Si el mercado se gira repentinamente y retrocede un **0.6%**, cierra la operación en positivo, evitando que un trade ganador se convierta en perdedor.
-
-### ⚖️ Cooldown Adaptativo (Anti-Revenge Trading)
-Implementación de un bloqueo inteligente entre operaciones. 
-* **Base:** 15 minutos tras una operación exitosa.
-* **Castigo por pérdida:** Si la operación toca Stop Loss, el bot añade +10 minutos extra al temporizador (1ª pérdida = 25 min, 2ª = 35 min, etc.). Erradica el overtrading y el sangrado por comisiones.
-
-### 📊 Dashboard Analítico y Win Rate Tracking
-Integración total con la API v2 de Bitget (`history-orders`). El bot descarga las últimas operaciones reales y calcula en vivo tu **Win Rate (%)** y tu **PnL Neto de las últimas 24 horas**, mostrándolo en la interfaz junto con un historial de posiciones 🟢🔴.
-
-### 🔋 Persistencia Inmortal (WakeLock Kernel)
-Implementación de bloqueos de energía a nivel de kernel (`PARTIAL_WAKE_LOCK`). Mientras otros bots de Android son asesinados por el ahorro de batería, SignalFusion Pro mantiene el hilo de red y la CPU despiertos 24/7.
+| Parámetro | Valor |
+|-----------|-------|
+| Versión | V9.4 |
+| Timeframe | 1h |
+| Estrategia | MODERADA (2/3 familias) |
+| Apalancamiento | 5x |
+| Take Profit | 4.0% |
+| Stop Loss | 2.0% |
+| Ratio R:R | 2.0:1 |
+| Trailing activación | 3.0% |
+| Trailing callback | 1.0% |
+| Cooldown base | 60 min (escala con pérdidas) |
+| Horario | 24h — filtro por ATR mínimo 0.3% |
+| Monedas | BTC por defecto (ETH opcional) |
 
 ---
 
-## 📊 El Arsenal Técnico (Indicadores Nativos)
-SignalFusion calcula todos estos indicadores matemáticamente desde las velas crudas obtenidas vía API:
-* **RSI (14)** y **RSI MA (7)** para cruces de momentum.
-* **MACD (12, 26, 9)** (Línea principal, Señal e Histograma).
-* **Bandas de Bollinger (20, 2.0)** para detección de desviaciones estándar y *Squeeze* (compresión del mercado).
-* **Escuadrón de EMAs:** $EMA_{12}$ (Rápida), $EMA_{26}$ (Lenta), $EMA_{50}$ (Soporte dinámico) y $EMA_{200}$ (Filtro de Tendencia).
-* **ATR (14)**: Rango verdadero promedio porcentual.
+## Arquitectura — Sistema de 3 Capas de Veto
+
+El motor V9.4 evalúa cada señal pasando por tres capas de validación independientes. Si una capa veta, no se analiza la siguiente.
+
+### Capa 1 — Régimen de Mercado (veto absoluto)
+
+Determina si el mercado está en tendencia o en rango lateral. Si está en rango, no se opera.
+
+- **BULL**: precio > EMA200, EMAs alineadas al alza, HTF proxy alcista → solo LONGs
+- **BEAR**: precio < EMA200, EMAs alineadas a la baja, HTF proxy bajista → solo SHORTs
+- **NEUTRAL**: BB squeeze o sin tendencia clara → ningún trade
+
+### Capa 2 — Votación por Familias
+
+Tres familias de indicadores votan de forma independiente. En modo MODERADA se necesitan 2/3 para confirmar.
+
+- **RSI (14)**: vota cuando hay momentum claro vela-a-vela comparado con RSI MA (7)
+- **EMA**: vota por cruces EMA12/EMA26 o alineación perfecta con precio
+- **MACD**: vota por cruces de señal o expansión del histograma entre velas consecutivas
+
+### Capa 3 — Trigger de Entrada
+
+Última validación antes de abrir posición:
+- Precio debe estar al lado correcto de la EMA rápida
+- MACD histograma debe confirmar la dirección
 
 ---
 
-## 🛠️ Manual de Vuelo (Configuración y Despegue)
+## Gestión de Riesgo
 
-### 1. Conexión de API (Bitget)
-Crea una API Key en Bitget con permisos exclusivos de **Lectura** y **Trade (Futuros)**. *No habilites permisos de retiro.* Introduce la API Key, Secret Key y Passphrase en Ajustes.
+**Tamaño de posición** calculado como porcentaje del balance disponible:
 
-### 2. Configuración de la App
-* **Filtro de Monedas:** Marca solo los activos que desees operar (Ej: `ETH`, `SOL`, `XRP`). *Nota: Si tu cuenta es menor a $50, desactiva `BTC` debido al alto tamaño mínimo de contrato.*
-* **Estrategia:** 🟢 **MODERADA (Francotirador):** Configuración óptima y recomendada. Menos operaciones, altísima precisión.
-* *Nota de Seguridad:* El motor v7.2 ignorará los valores de "SL" y "TP" que pongas en la interfaz para forzar su matemática segura interna (SL 2.6% / TP 6.0%).
+| Balance | Margen por trade |
+|---------|-----------------|
+| < $100 | 5% del balance |
+| $100 – $2,000 | 4% del balance |
+| > $2,000 | Configurable (default 5%) |
 
-### 3. ⚠️ OBLIGATORIO: Optimización de Android
-Para que el bot no se apague en segundo plano y mantenga el servicio activo (`ForegroundService` tipo `dataSync`):
-1. `Ajustes de Android > Aplicaciones > SignalFusion Pro > Batería > Seleccionar "Sin Restricciones"`.
-2. Habilita las notificaciones de la app para ver los trades en tiempo real.
+**Cooldown escalado tras pérdidas:**
 
----
+| Pérdidas consecutivas | Cooldown |
+|-----------------------|---------|
+| 0 (win o arranque) | 60 min |
+| 1 pérdida | 90 min |
+| 2 pérdidas | 120 min |
+| 3 pérdidas | 150 min |
 
-## 📜 Registro de Misiones (Changelog)
-
-### **v7.2 SF - The Institutional Patch (Actual)**
-* **[CRÍTICO]** Corrección matemática del cálculo de margen (`sizeAmount = margenDeseado / precio`). Elimina el bug de exposición x100.
-* **[CRÍTICO]** Sincronización del Historial unificada con la API v2. Win Rate y PnL Diario 100% precisos y renderizados en la UI.
-* **[NUEVO]** Bypass de margen dinámico estructurado en 4 niveles para proteger y levantar cuentas desde $10 USD.
-* **[NUEVO]** Trailing Stop agresivo (Activación 1.5% / Callback 0.6%) para asegurar ganancias rápidas.
-* **[NUEVO]** Filtro ATR endurecido al 1.2% para descartar "ruido" y falsos rompimientos.
-* **[NUEVO]** Sistema de Cooldown penalizador por pérdidas consecutivas (15min base + 10min por Loss).
-* **[FIX]** Ajuste total del `AndroidManifest.xml` para compatibilidad nativa con servicios en segundo plano de Android 14.
-
-### **v5.1 Ultimate - Sniper Patch**
-* Corrección de la lógica de ATR con límites estrictos (`minOf`).
-* Filtro de Tendencia (EMA Lenta) añadido al Scoring.
-
-### **v5.0 Ultimate - El Salto Cuantitativo**
-* Eliminación de condicionales `if/else` rígidos. Nuevo motor `SignalFusionUltimateStrategy.kt`.
-* Sistema de Scoring adaptativo.
+El cooldown **persiste entre reinicios** del servicio — se guarda en SharedPreferences y se restaura automáticamente al arrancar.
 
 ---
 
-## ⚠️ Disclaimer Financiero
-**El trading de futuros de criptomonedas conlleva un riesgo extremo de pérdida total del capital.** SignalFusion Pro es una herramienta de automatización algorítmica de código abierto con fines educativos y experimentales. El autor de este repositorio no se hace responsable de liquidaciones, errores de API, fallos de red o pérdidas financieras derivadas del uso de este software. **Opere bajo su propia y absoluta responsabilidad.**
+## Indicadores calculados nativamente
+
+Todos los indicadores se calculan sobre las velas descargadas via API, sin librerías externas:
+
+- **RSI (14)** + **RSI MA (7)** — momentum y cruces
+- **MACD (12, 26, 9)** — línea, señal e histograma
+- **Bollinger Bands (20, 2.0)** — squeeze y régimen lateral
+- **EMA 12** (rápida), **EMA 26** (lenta), **EMA 50** (soporte dinámico), **EMA 200** (filtro de tendencia)
+- **ATR (14)** — volatilidad mínima exigida: 0.3% en 1h
 
 ---
-*Desarrollado y mantenido con ☕ y ❤️ por IG: jonathansoto06*
+
+
+
+---
+
+## Configuración inicial
+
+### 1. API Key de Bitget
+
+Crea una API Key en Bitget con permisos de **Lectura** y **Trade (Futuros)**. No habilites permisos de retiro. Introduce las credenciales en la pestaña Ajustes de la app.
+
+### 2. Parámetros en la app
+
+- Timeframe → `1h`
+- Estrategia → `MODERADA`
+- Monedas → `BTC` (desactiva ETH y XRP hasta validar resultados)
+- Modo → `DEMO` hasta acumular 30+ trades con win rate positivo
+
+### 3. Optimización Android obligatoria
+
+El bot corre como `ForegroundService`. Para que Android no lo mate en segundo plano:
+
+```
+Ajustes → Aplicaciones → SignalFusion → Batería → Sin restricciones
+```
+
+Habilita notificaciones de la app para recibir alertas de trades en tiempo real.
+
+---
+
+## Modo DEMO vs REAL
+
+El bot detecta automáticamente el modo según `BitgetConfig`. En DEMO los símbolos tienen prefijo `S` (por ejemplo `SBTCSUSDT`). El `productType` cambia de `USDT-FUTURES` a `SUSDT-FUTURES`.
+
+Para cambiar de modo edita `BitgetConfig.kt` o usa el selector en Ajustes si está implementado en tu versión de la UI.
+
+---
+
+## Cómo interpretar el Logcat
+
+Filtra por `BOT_DEBUG` en Android Studio para ver solo los logs del bot:
+
+| Mensaje | Significado |
+|---------|-------------|
+| `✅ MOTOR V9.4 DEMO` | Bot iniciado correctamente |
+| `✅ SBTCSUSDT: 200 velas cargadas` | Historial descargado, bot calibrado |
+| `🚫 Capa 1 - NEUTRAL: BB squeeze` | Mercado en rango, esperando tendencia |
+| `🚫 Capa 2 - 1/2 (SHORT) RSI=NEUTRAL EMA=SHORT MACD=NEUTRAL` | Falta una familia para confirmar — normal |
+| `✅✅✅ SEÑAL V9.4: SHORT en BTCUSDT` | Señal válida, abriendo posición |
+| `🛡️ Trailing: Max 3.20% → 2.10%` | Trailing stop activado |
+| `🏁 CERRADO | PnL: +1.85%` | Trade cerrado con resultado |
+| `⏳ Cooldown 58min` | En espera entre trades |
+
+---
+
+## Historial de versiones
+
+### V9.4 — Swing 1H (actual)
+- Cambio de filosofía: de scalping 5m a swing 1h
+- Leverage reducido de 10x a 5x
+- TP 4.0% / SL 2.0% — ratio R:R 2:1 matemáticamente viable
+- Modo MODERADA por defecto — exige 2/3 familias
+- Cooldown base aumentado a 60 minutos
+- Opera 24h con ATR como único filtro de mercado dormido
+- Solo BTC por defecto — menor spread en DEMO
+
+### V9.3 — Filtered MACD
+- Eliminado `macdStaticLong/Short` que causaba entradas en cualquier condición
+- Cooldown persistente en SharedPreferences
+- Fix coma locale español en `lastPrice.toDoubleOrNull()`
+- Cooldown escalado dinámicamente tras pérdidas consecutivas
+
+### V9.2 — Candle-Sync Fix
+- Fix crítico: `evaluate()` recibe `isNewCandle: Boolean`
+- `updateMemory()` solo se llama cuando llega una vela nueva real
+- Eliminados falsos cruces causados por evaluaciones cada 3 segundos con el mismo historial
+
+### V9.1 — RSI Zones Fix
+- Zonas RSI corregidas para régimen BULL: votaba LONG solo con RSI < 38, que nunca ocurría en tendencia alcista
+- BB squeeze relajado de 0.010 a 0.005
+- SL subido de 0.9% a 1.5% para sobrevivir spread del modo DEMO
+
+### V9.0 — Sistema de 3 Capas
+- Arquitectura nueva: Régimen → Familias → Trigger
+- Basado en análisis real de 26 operaciones (marzo 2026)
+- `TradeStateManager` para cooldown por barras entre señales
+
+### V8 y anteriores
+- Motor de scoring aditivo con sesgos fijos
+- Reemplazado por sistema de veto independiente por familias
+
+---
+
+## Disclaimer
+
+El trading de futuros de criptomonedas conlleva riesgo elevado de pérdida de capital. SignalFusion Pro es una herramienta algorítmica con fines educativos y experimentales. Opera exclusivamente bajo tu propia responsabilidad. Valida siempre en modo DEMO antes de usar capital real.
+
+---
+
+*Desarrollado por [@jsoto-06](https://github.com/jsoto-06)*
